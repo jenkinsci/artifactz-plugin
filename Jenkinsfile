@@ -26,6 +26,7 @@ podTemplate(label: 'jpod', cloud: 'kubernetes', serviceAccount: 'jenkins',
             container('java') {
                 try {
                     sh 'mvn hpi:hpi'
+                    step([$class: 'ArtifactArchiver', artifacts: 'build/libs/*.hpi', fingerprint: true])
                 } catch (error) {
                     step([$class: 'Mailer',
                         notifyEveryUnstableBuild: true,
