@@ -23,6 +23,7 @@ podTemplate(label: 'jpod', cloud: 'kubernetes', serviceAccount: 'jenkins',
                     sh 'mvn compile hpi:hpi'
                     step([$class: 'ArtifactArchiver', artifacts: 'target/*.hpi', fingerprint: true])
                 } catch (error) {
+                    currentBuild.result = 'FAILURE'
                     step([$class: 'Mailer',
                         notifyEveryUnstableBuild: true,
                         recipients: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
@@ -45,6 +46,7 @@ podTemplate(label: 'jpod', cloud: 'kubernetes', serviceAccount: 'jenkins',
                             sh "${scannerHome}/bin/sonar-scanner"
                         }
                     } catch (error) {
+                        currentBuild.result = 'FAILURE'
                         step([$class: 'Mailer',
                             notifyEveryUnstableBuild: true,
                             recipients: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
