@@ -1,10 +1,5 @@
-version = ""
-promoted = false
-projectName = ""
-repository = "ikolomiyets/demo-policy"
-tag = "latest"
-namespace = "demo"
-image = ""
+version = "1.0.0"
+projectName = "artifactor-plugin"
 
 podTemplate(label: 'jpod', cloud: 'kubernetes', serviceAccount: 'jenkins',
     containers: [
@@ -25,8 +20,8 @@ podTemplate(label: 'jpod', cloud: 'kubernetes', serviceAccount: 'jenkins',
         stage('Build Java Code') {
             container('java') {
                 try {
-                    sh 'mvn hpi:hpi'
-                    step([$class: 'ArtifactArchiver', artifacts: 'build/libs/*.hpi', fingerprint: true])
+                    sh 'mvn compile hpi:hpi'
+                    step([$class: 'ArtifactArchiver', artifacts: 'target/*.hpi', fingerprint: true])
                 } catch (error) {
                     step([$class: 'Mailer',
                         notifyEveryUnstableBuild: true,
