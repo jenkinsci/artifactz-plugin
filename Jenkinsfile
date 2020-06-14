@@ -8,7 +8,7 @@ image = ""
 
 podTemplate(label: 'jpod', cloud: 'kubernetes', serviceAccount: 'jenkins',
     containers: [
-    containerTemplate(name: 'java', image: 'openjdk:8u252-jdk', ttyEnabled: true, command: 'cat'),
+    containerTemplate(name: 'java', image: 'maven:3.6.3-openjdk-8', ttyEnabled: true, command: 'cat'),
     containerTemplate(name: 'sonarqube', image: 'iktech/sonarqube-scanner', ttyEnabled: true, command: 'cat'),
     ],
     volumes: [
