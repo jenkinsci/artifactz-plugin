@@ -41,6 +41,8 @@ public class Configuration extends GlobalConfiguration {
     @CheckForNull
     private String credentialsId;
 
+    private String sender;
+
     public Configuration() {
         load();
     }
@@ -52,6 +54,16 @@ public class Configuration extends GlobalConfiguration {
     @DataBoundSetter
     public void setServerUrl(String serverUrl) {
         this.serverUrl = serverUrl;
+        save();
+    }
+
+    public String getSender() {
+        return this.sender;
+    }
+
+    @DataBoundSetter
+    public void setSender(String sender) {
+        this.sender = sender;
         save();
     }
 

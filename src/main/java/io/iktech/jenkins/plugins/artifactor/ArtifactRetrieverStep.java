@@ -3,32 +3,25 @@ package io.iktech.jenkins.plugins.artifactor;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
-import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.Describable;
-import hudson.model.Descriptor;
+import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import hudson.tasks.Builder;
-import hudson.tasks.Publisher;
 import io.iktech.jenkins.plugins.artifactor.model.Stage;
-import jenkins.model.Jenkins;
-import jenkins.tasks.SimpleBuildStep;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
-import org.jenkinsci.plugins.structs.describable.DescribableModel;
-import org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.CheckForNull;
 import java.io.PrintStream;
-import java.util.*;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ArtifactRetrieverStep extends Step {
@@ -97,9 +90,16 @@ public class ArtifactRetrieverStep extends Step {
 
             PrintStream l = taskListener.getLogger();
             l.println("Retrieving versions of the following artifacts at the stage '" + this.stage + "'");
+            this.stage = URLEncoder.encode(this.stage, "UTF-8").replace("+", "%20");
             String param = String.join("&", this.names.stream().map(n -> {
-                l.println("  - " + n);
-                return "artifact=" + n;
+                try {
+                    n = URLEncoder.encode(n, "UTF-8");
+                    l.println("  - " + n);
+                    return "artifact=" + n;
+                } catch (UnsupportedEncodingException e) {
+                    l.println("Cannot encode '" + n + "'");
+                    return "";
+                }
             }).collect(Collectors.toList()));
             StringCredentials token = CredentialsProvider.findCredentialById(Configuration.get().getCredentialsId(), StringCredentials.class, run);
             Stage result = null;
@@ -112,6 +112,7 @@ public class ArtifactRetrieverStep extends Step {
             } catch (ExchangeException e) {
                 logger.error("Error while retrieving artifact versions", e);
                 taskListener.fatalError("Error while retrieving artifact versions: " + e.getMessage());
+                run.getExecutor().interrupt(Result.FAILURE);
             }
 
             return result;
@@ -120,7 +121,6 @@ public class ArtifactRetrieverStep extends Step {
 
     @Extension
     public static final class DescriptorImpl extends StepDescriptor {
-
         @Override
         public String getFunctionName() {
             return "retrieveArtifacts";

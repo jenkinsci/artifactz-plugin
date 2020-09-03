@@ -34,3 +34,7 @@ For example:
 ```
     def result = retrieveArtifacts stage: 'uat', names: ['document-manager-ui']
 ```
+
+## Testing
+To start test Jenkins environment run the following command `mvn hpi:test`.
+Once Jenkins is up and running it can be accessed at http://localhost:8080/jenkins 

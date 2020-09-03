@@ -4,6 +4,10 @@
         <f:entry title="${%Artifactor Server URL}" field="serverUrl">
             <f:textbox default="https://artifactor.iktech.io" clazz="required"/>
         </f:entry>
+        <f:entry title="${%Username}" field="sender">
+            <f:textbox/>
+        </f:entry>
+
         <f:entry title="${%Credentials}" field="credentialsId">
             <c:select/>
         </f:entry>

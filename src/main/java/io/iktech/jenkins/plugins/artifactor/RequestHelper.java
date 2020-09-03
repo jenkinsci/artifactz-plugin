@@ -11,6 +11,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 
 public class RequestHelper {
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -20,6 +21,9 @@ public class RequestHelper {
         HttpGet getVersion = new HttpGet(Configuration.get().getServerUrl() + "/stages/" + stage + "/list?" + artifactsQuery);
         getVersion.setHeader("Accepts", ContentType.APPLICATION_JSON.getMimeType());
         getVersion.setHeader("Authorization", "Bearer " + token);
+        if (Configuration.get().getSender() != null) {
+            getVersion.setHeader("X-ClientId", Configuration.get().getSender());
+        }
         CloseableHttpResponse response = null;
         try {
             response = client.execute(getVersion);

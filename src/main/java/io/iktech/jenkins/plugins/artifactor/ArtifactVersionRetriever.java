@@ -7,20 +7,14 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractProject;
+import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
-import io.iktech.jenkins.plugins.artifactor.model.ErrorMessage;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -32,6 +26,8 @@ import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -86,9 +82,16 @@ public class ArtifactVersionRetriever extends Builder implements SimpleBuildStep
     public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener) throws InterruptedException, IOException {
         PrintStream l = taskListener.getLogger();
         l.println("Retrieving versions of the following artifacts at the stage '" + this.stage + "'");
+        this.stage = URLEncoder.encode(this.stage, "UTF-8").replace("+", "%20");
         String param = String.join("&", this.names.stream().map(n -> {
-            l.println("  - " + n.getName());
-            return "artifact=" + n.getName();
+            try {
+                String artifact = URLEncoder.encode(n.getName(), "UTF-8");
+                l.println("  - " + artifact);
+                return "artifact=" + artifact;
+            } catch (UnsupportedEncodingException e) {
+                l.println("Cannot encode '" + n + "'");
+                return "";
+            }
         }).collect(Collectors.toList()));
         StringCredentials token = CredentialsProvider.findCredentialById(Configuration.get().getCredentialsId(), StringCredentials.class, run);
 
@@ -103,6 +106,7 @@ public class ArtifactVersionRetriever extends Builder implements SimpleBuildStep
         } catch (ExchangeException e) {
             logger.error("Error while retrieving artifact versions", e);
             taskListener.fatalError("Error while retrieving artifact versions: " + e.getMessage());
+            run.getExecutor().interrupt(Result.FAILURE);
         }
     }
 
