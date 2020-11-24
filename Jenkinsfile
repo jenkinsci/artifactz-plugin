@@ -58,23 +58,23 @@ podTemplate(label: 'jpod', cloud: 'kubernetes', serviceAccount: 'jenkins',
             }
         }
 
-        stage("Quality Gate") {
-	          milestone(1)
-	          lock(resource: "${projectName}-sonarqube") {
-                  timeout(time: 1, unit: 'HOURS') { // Just in case something goes wrong, pipeline will be killed after a timeout
-                    def qg = waitForQualityGate() // Reuse taskId previously collected by withSonarQubeEnv
-                    if (qg.status != 'OK') {
-                        step([$class: 'Mailer',
-                            notifyEveryUnstableBuild: true,
-                            recipients: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
-                                                            [$class: 'RequesterRecipientProvider']]),
-                            sendToIndividuals: true])
-                        error "Pipeline aborted due to quality gate failure: ${qg.status}"
-                    }
-                  }
-		          milestone(2)
-             }
-        }
+//         stage("Quality Gate") {
+// 	          milestone(1)
+// 	          lock(resource: "${projectName}-sonarqube") {
+//                   timeout(time: 1, unit: 'HOURS') { // Just in case something goes wrong, pipeline will be killed after a timeout
+//                     def qg = waitForQualityGate() // Reuse taskId previously collected by withSonarQubeEnv
+//                     if (qg.status != 'OK') {
+//                         step([$class: 'Mailer',
+//                             notifyEveryUnstableBuild: true,
+//                             recipients: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
+//                                                             [$class: 'RequesterRecipientProvider']]),
+//                             sendToIndividuals: true])
+//                         error "Pipeline aborted due to quality gate failure: ${qg.status}"
+//                     }
+//                   }
+// 		          milestone(2)
+//              }
+//         }
 
         stage('Tag Source Code') {
             def repositoryCommitterEmail = "jenkins@iktech.io"
