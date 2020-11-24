@@ -3,6 +3,9 @@
     <f:entry title="${%Stage}" field="stage">
         <f:textbox />
     </f:entry>
+    <f:entry title="${%Flow Name}" field="flow">
+        <f:textbox />
+    </f:entry>
     <f:entry title="${%Artifact Name}" field="name">
         <f:textbox />
     </f:entry>

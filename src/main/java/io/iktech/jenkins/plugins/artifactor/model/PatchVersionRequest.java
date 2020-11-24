@@ -11,6 +11,8 @@ public class PatchVersionRequest implements Serializable {
 
     @JsonProperty("stage")
     private String stage;
+    @JsonProperty("flow")
+    private String flow;
     @JsonProperty("stage_description")
     private String stageDescription;
     @JsonProperty("artifact_name")
@@ -32,6 +34,14 @@ public class PatchVersionRequest implements Serializable {
 
     public void setStage(String stage) {
         this.stage = stage;
+    }
+
+    public String getFlow() {
+        return flow;
+    }
+
+    public void setFlow(String flow) {
+        this.flow = flow;
     }
 
     public String getStageDescription() {

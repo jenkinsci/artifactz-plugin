@@ -44,6 +44,7 @@ public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep
     private String groupId;
     private String artifactId;
     private String stage;
+    private String flow;
     private String stageDescription;
     private String version;
 
@@ -54,6 +55,7 @@ public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep
                                     String groupId,
                                     String artifactId,
                                     String stage,
+                                    String flow,
                                     String stageDescription,
                                     String version) {
         this.name = name;
@@ -62,6 +64,7 @@ public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.stage = stage;
+        this.flow = flow;
         this.stageDescription = stageDescription;
         this.version = version;
     }
@@ -120,6 +123,15 @@ public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep
         this.stage = stage;
     }
 
+    public String getFlow() {
+        return flow;
+    }
+
+    @DataBoundSetter
+    public void setFlow(String flow) {
+        this.flow = flow;
+    }
+
     public String getVersion() {
         return version;
     }
@@ -163,6 +175,7 @@ public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep
         taskListener.getLogger().println("  version: " + version);
         PatchVersionRequest request = new PatchVersionRequest();
         request.setStage(stage);
+        request.setFlow(flow);
         request.setStageDescription(stageDescription);
         request.setName(name);
         request.setDescription(description);
