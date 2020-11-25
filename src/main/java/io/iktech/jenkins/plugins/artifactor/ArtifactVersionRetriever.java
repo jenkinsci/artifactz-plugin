@@ -107,11 +107,12 @@ public class ArtifactVersionRetriever extends Builder implements SimpleBuildStep
             EnvVars envVars = run.getEnvironment(taskListener);
             if (stage.getArtifacts() != null) {
                 logger.info("There are artifacts in the response, converting the result to the hashmap");
-                envVars.put("_response", objectMapper.writeValueAsString(stage.getArtifacts().stream().collect(Collectors.toMap(Version::getArtifactName, Version::getVersion))));
+                content = objectMapper.writeValueAsString(stage.getArtifacts().stream().collect(Collectors.toMap(Version::getArtifactName, Version::getVersion)));
             } else {
+                content = "[]";
                 logger.info("Returned empty result");
-                envVars.put("_response", "[]");
             }
+            envVars.put("_response", content);
 
             String variableName = !StringUtils.isEmpty(this.variableName) ? this.variableName : "ARTIFACTOR_VERSION_DATA";
             run.addAction(new InjectVariable(variableName, content));
