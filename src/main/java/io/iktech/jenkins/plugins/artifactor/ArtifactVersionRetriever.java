@@ -13,6 +13,8 @@ import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
+import io.iktech.jenkins.plugins.artifactor.model.Stage;
+import io.iktech.jenkins.plugins.artifactor.model.Version;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
@@ -97,8 +99,19 @@ public class ArtifactVersionRetriever extends Builder implements SimpleBuildStep
 
         try {
             String content = RequestHelper.retrieveVersion(token.getSecret().getPlainText(), this.stage, param);
+            logger.info("Retrieved the following content from the Artifactor service: " + content);
+            ObjectMapper objectMapper = new ObjectMapper();
+            Stage stage = objectMapper.readValue(content, Stage.class);
+
+            logger.info("Content has been converted to the object");
             EnvVars envVars = run.getEnvironment(taskListener);
-            envVars.put("_response", content);
+            if (stage.getArtifacts() != null) {
+                logger.info("There are artifacts in the response, converting the result to the hashmap");
+                envVars.put("_response", objectMapper.writeValueAsString(stage.getArtifacts().stream().collect(Collectors.toMap(Version::getArtifactName, Version::getVersion))));
+            } else {
+                logger.info("Returned empty result");
+                envVars.put("_response", "[]");
+            }
 
             String variableName = !StringUtils.isEmpty(this.variableName) ? this.variableName : "ARTIFACTOR_VERSION_DATA";
             run.addAction(new InjectVariable(variableName, content));

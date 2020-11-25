@@ -10,6 +10,7 @@ import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import io.iktech.jenkins.plugins.artifactor.model.Stage;
+import io.iktech.jenkins.plugins.artifactor.model.Version;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -20,7 +21,9 @@ import org.slf4j.LoggerFactory;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -69,7 +72,7 @@ public class ArtifactRetrieverStep extends Step {
         return new Execution(stage, names, variable, context);
     }
 
-    private static final class Execution extends SynchronousNonBlockingStepExecution<Stage> {
+    private static final class Execution extends SynchronousNonBlockingStepExecution<Map<String, String>> {
         private static final long serialVersionUID = 6190377462479580850L;
         private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -84,7 +87,7 @@ public class ArtifactRetrieverStep extends Step {
             this.variable = variable;
         }
 
-        @Override protected Stage run() throws Exception {
+        @Override protected Map<String, String> run() throws Exception {
             Run<?, ?> run = getContext().get(Run.class);
             TaskListener taskListener = getContext().get(TaskListener.class);
 
@@ -115,7 +118,7 @@ public class ArtifactRetrieverStep extends Step {
                 run.getExecutor().interrupt(Result.FAILURE);
             }
 
-            return result;
+            return result.getArtifacts() != null ? result.getArtifacts().stream().collect(Collectors.toMap(Version::getArtifactName, Version::getVersion)) : new HashMap<>();
         }
     }
 
