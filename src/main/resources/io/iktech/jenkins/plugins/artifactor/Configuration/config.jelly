@@ -12,6 +12,14 @@
             <c:select/>
         </f:entry>
 
-        <f:validateButton title="${%Test Connection}" progress="${%Testing...}" method="testConnection" with="name,serverUrl,credentialsId,serverCertificate,skipTlsVerify,namespace" />
+        <f:entry title="${%Proxy URL}" field="proxy">
+            <f:textbox/>
+        </f:entry>
+
+        <f:entry title="${%Proxy Credentials}" field="proxyCredentialsId">
+            <c:select/>
+        </f:entry>
+
+        <f:validateButton title="${%Test Connection}" progress="${%Testing...}" method="testConnection" with="name,serverUrl,credentialsId,proxy,proxyCredentialsId,serverCertificate,skipTlsVerify,namespace" />
     </f:section>
 </j:jelly>

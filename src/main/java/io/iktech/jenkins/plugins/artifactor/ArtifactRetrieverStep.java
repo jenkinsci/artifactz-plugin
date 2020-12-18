@@ -136,7 +136,7 @@ public class ArtifactRetrieverStep extends Step {
 
         @Override
         public boolean isMetaStep() {
-            return true;
+            return false;
         }
 
         @Override public Set<? extends Class<?>> getRequiredContext() {
