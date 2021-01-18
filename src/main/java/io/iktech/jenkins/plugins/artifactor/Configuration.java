@@ -32,6 +32,7 @@ import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import javax.annotation.CheckForNull;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
 
@@ -134,7 +135,7 @@ public class Configuration extends GlobalConfiguration {
         String proxySchema;
         String proxyHost;
         int proxyPort;
-        HttpHost proxyHttpHost = null;
+        HttpHost proxyHttpHost = RequestHelper.getProxyHost();
 
         Jenkins.get().checkPermission(Jenkins.ADMINISTER);
 
@@ -143,32 +144,6 @@ public class Configuration extends GlobalConfiguration {
         }
 
         HttpClientBuilder clientbuilder = HttpClients.custom();
-
-        if (!StringUtils.isEmpty(proxy)) {
-            URL proxyUri = new URL(proxy);
-            proxySchema = proxyUri.getProtocol();
-            proxyHost = proxyUri.getHost();
-            proxyPort = proxyUri.getPort();
-            if (proxyPort == -1) {
-                proxyPort = proxyUri.getDefaultPort();
-            }
-            proxyHttpHost = new HttpHost(proxyHost, proxyPort, proxySchema);
-
-            if (!StringUtils.isEmpty(proxyCredentialsId)) {
-                StandardUsernamePasswordCredentials proxyCredentials = CredentialsMatchers.firstOrNull(
-                        CredentialsProvider.lookupCredentials(
-                                StandardUsernamePasswordCredentials.class,
-                                Jenkins.get(),
-                                ACL.SYSTEM,
-                                Collections.emptyList()
-                        ), CredentialsMatchers.withId(proxyCredentialsId));
-
-                org.apache.http.client.CredentialsProvider credsProvider = new BasicCredentialsProvider();
-                credsProvider.setCredentials(new AuthScope(proxyHttpHost),
-                        new UsernamePasswordCredentials(proxyCredentials.getUsername(), proxyCredentials.getPassword().getPlainText()));
-                clientbuilder.setDefaultCredentialsProvider(credsProvider);
-            }
-        }
 
         StringCredentials credentials = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentials(

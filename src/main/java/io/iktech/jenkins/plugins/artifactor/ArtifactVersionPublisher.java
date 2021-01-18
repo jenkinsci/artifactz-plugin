@@ -16,6 +16,8 @@ import io.iktech.jenkins.plugins.artifactor.model.ErrorMessage;
 import io.iktech.jenkins.plugins.artifactor.model.PatchVersionRequest;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpHost;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPut;
@@ -34,6 +36,7 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep {
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -152,6 +155,14 @@ public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep
 
     @Override
     public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener) throws InterruptedException, IOException {
+        HttpHost proxyHttpHost = null;
+
+        try {
+            proxyHttpHost = RequestHelper.getProxyHost();
+        } catch (MalformedURLException e) {
+            taskListener.getLogger().println("Incorrect proxy URL specified: " + Configuration.get().getProxy() + ". Ignoring...");
+        }
+
         final EnvVars env = run.getEnvironment(taskListener);
         stage = env.expand(this.stage);
         stageDescription = env.expand(this.stageDescription);
@@ -184,7 +195,16 @@ public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep
         request.setArtifactId(artifactId);
         request.setVersion(version);
         CloseableHttpClient client = HttpClients.createDefault();
+
         HttpPut patch = new HttpPut(Configuration.get().getServerUrl() + "/artifacts/versions");
+
+        if (proxyHttpHost != null) {
+            RequestConfig.Builder reqconfigconbuilder = RequestConfig.custom();
+            reqconfigconbuilder = reqconfigconbuilder.setProxy(proxyHttpHost);
+            RequestConfig config = reqconfigconbuilder.build();
+            patch.setConfig(config);
+        }
+
         String content = objectMapper.writeValueAsString(request);
         StringEntity entity = new StringEntity(content, ContentType.APPLICATION_JSON);
         patch.setEntity(entity);
