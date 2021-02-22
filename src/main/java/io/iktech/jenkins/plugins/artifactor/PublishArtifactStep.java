@@ -133,7 +133,7 @@ public class PublishArtifactStep extends Step {
         return new PublishArtifactStep.Execution(this.name, this.description, this.type, this.flow, this.stage, this.stageDescription, this.groupId, this.artifactId, this.version, context);
     }
 
-    private static final class Execution extends SynchronousNonBlockingStepExecution<Void> {
+    private static final class Execution extends SynchronousNonBlockingStepExecution<Boolean> {
         private static final long serialVersionUID = 4829381492818317576L;
 
         private String name;
@@ -159,7 +159,7 @@ public class PublishArtifactStep extends Step {
             this.version = version;
         }
 
-        @Override protected Void run() throws Exception {
+        @Override protected Boolean run() throws Exception {
             Run<?, ?> run = getContext().get(Run.class);
             TaskListener taskListener = getContext().get(TaskListener.class);
 
@@ -179,7 +179,7 @@ public class PublishArtifactStep extends Step {
                 throw new AbortException(errorMessage);
             }
 
-            return Void.TYPE.newInstance();
+            return true;
         }
     }
 
