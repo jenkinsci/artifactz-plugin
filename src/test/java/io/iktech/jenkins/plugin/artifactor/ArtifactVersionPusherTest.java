@@ -94,7 +94,7 @@ public class ArtifactVersionPusherTest {
     @Test
     public void descriptorDisplayNameTest() throws Exception {
         ArtifactVersionPusher publisher = new ArtifactVersionPusher("test-artifact", "Development", "1.0.0", null);
-        assertEquals("Push Artifact Version to the next stage in the flow", ((ArtifactVersionPusher.DescriptorImpl)publisher.getDescriptor()).getDisplayName());
+        assertEquals("Push Artifact Version to the next stage in the flow Deprecated", ((ArtifactVersionPusher.DescriptorImpl)publisher.getDescriptor()).getDisplayName());
     }
 
     @Test
