@@ -1,16 +1,14 @@
 package io.iktech.jenkins.plugins.artifactor;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
-import hudson.Extension;
-import hudson.FilePath;
-import hudson.Launcher;
+import hudson.*;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import io.iktech.jenkins.plugins.artifactor.model.Stage;
-import io.iktech.jenkins.plugins.artifactor.model.Version;
+import io.artifactz.client.ServiceClient;
+import io.artifactz.client.exception.ClientException;
+import io.artifactz.client.model.Version;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -19,25 +17,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class ArtifactRetrieverStep extends Step {
-    private static Logger logger = LoggerFactory.getLogger(ArtifactRetrieverStep.class);
+public class RetrieveArtifactsStep extends Step {
+    private static Logger logger = LoggerFactory.getLogger(RetrieveArtifactsStep.class);
     private String stage;
     private List<String> names;
-    private String variable;
 
     @DataBoundConstructor
-    public ArtifactRetrieverStep(String stage, List<String> names, String variable) {
+    public RetrieveArtifactsStep(String stage, List<String> names) {
         this.stage = stage;
         this.names = names;
-        this.variable = variable;
     }
 
     public String getStage() {
@@ -58,33 +52,21 @@ public class ArtifactRetrieverStep extends Step {
         this.names = names;
     }
 
-    public String getVariable() {
-        return variable;
-    }
-
-    @DataBoundSetter
-    public void setVariable(String variable) {
-        this.variable = variable;
-    }
-
     @Override
     public StepExecution start(StepContext context) throws Exception {
-        return new Execution(stage, names, variable, context);
+        return new Execution(stage, names, context);
     }
 
     private static final class Execution extends SynchronousNonBlockingStepExecution<Map<String, String>> {
         private static final long serialVersionUID = 6190377462479580850L;
-        private static final ObjectMapper objectMapper = new ObjectMapper();
 
         private String stage;
         private List<String> names;
-        private String variable;
 
-        Execution(String stage, List<String> names, String variable, StepContext context) {
+        Execution(String stage, List<String> names, StepContext context) {
             super(context);
             this.stage = stage;
             this.names = names;
-            this.variable = variable;
         }
 
         @Override protected Map<String, String> run() throws Exception {
@@ -93,32 +75,30 @@ public class ArtifactRetrieverStep extends Step {
 
             PrintStream l = taskListener.getLogger();
             l.println("Retrieving versions of the following artifacts at the stage '" + this.stage + "'");
-            this.stage = URLEncoder.encode(this.stage, "UTF-8").replace("+", "%20");
-            String param = String.join("&", this.names.stream().map(n -> {
-                try {
-                    n = URLEncoder.encode(n, "UTF-8");
-                    l.println("  - " + n);
-                    return "artifact=" + n;
-                } catch (UnsupportedEncodingException e) {
-                    l.println("Cannot encode '" + n + "'");
-                    return "";
-                }
-            }).collect(Collectors.toList()));
+
             StringCredentials token = CredentialsProvider.findCredentialById(Configuration.get().getCredentialsId(), StringCredentials.class, run);
-            Stage result = null;
             try {
-                String content = RequestHelper.retrieveVersion(token.getSecret().getPlainText(), this.stage, param);
-                logger.info(content);
-                result = objectMapper.readValue(content, Stage.class);
-                l.println("Successfully retrieved artifact versions");
-
-            } catch (ExchangeException e) {
+                ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
+                io.artifactz.client.model.Stage stage = client.retrieveVersions(this.stage, this.names.toArray(new String[0]));
+                logger.info("Content has been converted to the object");
+                EnvVars envVars = run.getEnvironment(taskListener);
+                String content;
+                if (stage.getArtifacts() != null) {
+                    l.println("Successfully retrieved artifact versions");
+                    return stage.getArtifacts().stream().collect(Collectors.toMap(Version::getArtifactName, Version::getVersion));
+                }
+                String errorMessage = "No artifacts data in the response";
+                taskListener.fatalError(errorMessage);
+                logger.info("Service returned empty result set");
+                Objects.requireNonNull(run.getExecutor()).interrupt(Result.FAILURE);
+                throw new AbortException(errorMessage);
+            } catch (ClientException e) {
                 logger.error("Error while retrieving artifact versions", e);
-                taskListener.fatalError("Error while retrieving artifact versions: " + e.getMessage());
-                run.getExecutor().interrupt(Result.FAILURE);
+                String errorMessage = "Error while retrieving artifact versions: " + e.getMessage();
+                taskListener.fatalError(errorMessage);
+                Objects.requireNonNull(run.getExecutor()).interrupt(Result.FAILURE);
+                throw new AbortException(errorMessage);
             }
-
-            return result.getArtifacts() != null ? result.getArtifacts().stream().collect(Collectors.toMap(Version::getArtifactName, Version::getVersion)) : new HashMap<>();
         }
     }
 

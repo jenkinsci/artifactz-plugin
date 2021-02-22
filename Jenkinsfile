@@ -20,7 +20,7 @@ podTemplate(label: 'jpod', cloud: 'kubernetes', serviceAccount: 'jenkins',
         stage('Build Java Code') {
             container('java') {
                 try {
-                    sh 'mvn compile hpi:hpi'
+                    sh 'mvn compile test jacoco:report hpi:hpi'
                     step([$class: 'ArtifactArchiver', artifacts: 'target/*.hpi', fingerprint: true])
                 } catch (error) {
                     currentBuild.result = 'FAILURE'
@@ -31,8 +31,8 @@ podTemplate(label: 'jpod', cloud: 'kubernetes', serviceAccount: 'jenkins',
                         sendToIndividuals: true])
                     throw error
                 } finally {
-//                    step([$class: 'JUnitResultArchiver', testResults: 'build/test-results/**/*.xml'])
-//                    step([$class: 'JacocoPublisher'])
+                   step([$class: 'JUnitResultArchiver', testResults: 'target/surefire-reports/**/*.xml'])
+                   step([$class: 'JacocoPublisher'])
                 }
             }
         }
@@ -58,23 +58,23 @@ podTemplate(label: 'jpod', cloud: 'kubernetes', serviceAccount: 'jenkins',
             }
         }
 
-//         stage("Quality Gate") {
-// 	          milestone(1)
-// 	          lock(resource: "${projectName}-sonarqube") {
-//                   timeout(time: 1, unit: 'HOURS') { // Just in case something goes wrong, pipeline will be killed after a timeout
-//                     def qg = waitForQualityGate() // Reuse taskId previously collected by withSonarQubeEnv
-//                     if (qg.status != 'OK') {
-//                         step([$class: 'Mailer',
-//                             notifyEveryUnstableBuild: true,
-//                             recipients: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
-//                                                             [$class: 'RequesterRecipientProvider']]),
-//                             sendToIndividuals: true])
-//                         error "Pipeline aborted due to quality gate failure: ${qg.status}"
-//                     }
-//                   }
-// 		          milestone(2)
-//              }
-//         }
+        stage("Quality Gate") {
+	          milestone(1)
+	          lock(resource: "${projectName}-sonarqube") {
+                  timeout(time: 1, unit: 'HOURS') { // Just in case something goes wrong, pipeline will be killed after a timeout
+                    def qg = waitForQualityGate() // Reuse taskId previously collected by withSonarQubeEnv
+                    if (qg.status != 'OK') {
+                        step([$class: 'Mailer',
+                            notifyEveryUnstableBuild: true,
+                            recipients: emailextrecipients([[$class: 'CulpritsRecipientProvider'],
+                                                            [$class: 'RequesterRecipientProvider']]),
+                            sendToIndividuals: true])
+                        error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                    }
+                  }
+		          milestone(2)
+             }
+        }
 
         stage('Tag Source Code') {
             def repositoryCommitterEmail = "jenkins@iktech.io"

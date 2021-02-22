@@ -2,10 +2,7 @@ package io.iktech.jenkins.plugins.artifactor;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import hudson.EnvVars;
-import hudson.Extension;
-import hudson.FilePath;
-import hudson.Launcher;
+import hudson.*;
 import hudson.model.AbstractProject;
 import hudson.model.Result;
 import hudson.model.Run;
@@ -13,8 +10,10 @@ import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
-import io.iktech.jenkins.plugins.artifactor.model.Stage;
-import io.iktech.jenkins.plugins.artifactor.model.Version;
+import io.artifactz.client.ServiceClient;
+import io.artifactz.client.exception.ClientException;
+import io.artifactz.client.model.Stage;
+import io.artifactz.client.model.Version;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
@@ -28,24 +27,23 @@ import javax.annotation.Nonnull;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class ArtifactVersionRetriever extends Builder implements SimpleBuildStep {
+public class RetrieveArtifactsBuildStep extends Builder implements SimpleBuildStep {
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private static Logger logger = LoggerFactory.getLogger(ArtifactVersionRetriever.class);
+    private static Logger logger = LoggerFactory.getLogger(RetrieveArtifactsBuildStep.class);
 
     private List<Name> names;
     private String stage;
     private String variableName;
 
     @DataBoundConstructor
-    public ArtifactVersionRetriever(List<Name> names,
-                                    String stage,
-                                    String variableName) {
+    public RetrieveArtifactsBuildStep(List<Name> names,
+                                      String stage,
+                                      String variableName) {
         logger.info("Creating builder. Stage: " + stage + ", names: " + names.size());
         this.names = names;
         this.stage  = stage;
@@ -84,43 +82,39 @@ public class ArtifactVersionRetriever extends Builder implements SimpleBuildStep
     public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener) throws InterruptedException, IOException {
         PrintStream l = taskListener.getLogger();
         l.println("Retrieving versions of the following artifacts at the stage '" + this.stage + "'");
-        this.stage = URLEncoder.encode(this.stage, "UTF-8").replace("+", "%20");
-        String param = String.join("&", this.names.stream().map(n -> {
-            try {
-                String artifact = URLEncoder.encode(n.getName(), "UTF-8");
-                l.println("  - " + artifact);
-                return "artifact=" + artifact;
-            } catch (UnsupportedEncodingException e) {
-                l.println("Cannot encode '" + n + "'");
-                return "";
-            }
-        }).collect(Collectors.toList()));
         StringCredentials token = CredentialsProvider.findCredentialById(Configuration.get().getCredentialsId(), StringCredentials.class, run);
-
         try {
-            String content = RequestHelper.retrieveVersion(token.getSecret().getPlainText(), this.stage, param);
-            logger.info("Retrieved the following content from the Artifactor service: " + content);
-            ObjectMapper objectMapper = new ObjectMapper();
-            Stage stage = objectMapper.readValue(content, Stage.class);
+            ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
+            List<String> artifacts = new ArrayList<>();
+            for (Name name : this.getNames()) {
+                artifacts.add(name.getName());
+            }
 
+            Stage stage = client.retrieveVersions(this.getStage(), artifacts.toArray(new String[0]));
             logger.info("Content has been converted to the object");
             EnvVars envVars = run.getEnvironment(taskListener);
+            String content;
             if (stage.getArtifacts() != null) {
                 logger.info("There are artifacts in the response, converting the result to the hashmap");
                 content = objectMapper.writeValueAsString(stage.getArtifacts().stream().collect(Collectors.toMap(Version::getArtifactName, Version::getVersion)));
             } else {
-                content = "[]";
-                logger.info("Returned empty result");
+                String errorMessage = "No artifacts data in the response";
+                taskListener.fatalError(errorMessage);
+                logger.info("Service returned empty result set");
+                Objects.requireNonNull(run.getExecutor()).interrupt(Result.FAILURE);
+                throw new AbortException(errorMessage);
             }
             envVars.put("_response", content);
 
-            String variableName = !StringUtils.isEmpty(this.variableName) ? this.variableName : "ARTIFACTOR_VERSION_DATA";
+            String variableName = !StringUtils.isEmpty(this.getVariableName()) ? this.getVariableName() : "ARTIFACTOR_VERSION_DATA";
             run.addAction(new InjectVariable(variableName, content));
             l.println("Successfully retrieved artifact versions");
-        } catch (ExchangeException e) {
+        } catch (ClientException e) {
             logger.error("Error while retrieving artifact versions", e);
-            taskListener.fatalError("Error while retrieving artifact versions: " + e.getMessage());
-            run.getExecutor().interrupt(Result.FAILURE);
+            String errorMessage = "Error while retrieving artifact versions: " + e.getMessage();
+            taskListener.fatalError(errorMessage);
+            Objects.requireNonNull(run.getExecutor()).interrupt(Result.FAILURE);
+            throw new AbortException(errorMessage);
         }
     }
 
@@ -129,14 +123,14 @@ public class ArtifactVersionRetriever extends Builder implements SimpleBuildStep
         public FormValidation doCheckNames(@QueryParameter List<Name> value)
                 throws IOException, ServletException {
             if (value == null || value.size() == 0) {
-                return FormValidation.error(Messages.ArtifactVersionRetriever_DescriptorImpl_errors_missingNames());
+                return FormValidation.error(Messages.RetrieveArtifactsBuildStep_DescriptorImpl_errors_missingNames());
             }
             return FormValidation.ok();
         }
 
         public FormValidation doCheckStage(@QueryParameter String value)
                 throws IOException, ServletException {
-            if (value.length() == 0) {
+            if (value == null || value.length() == 0) {
                 return FormValidation.error(Messages.Artifact_DescriptorImpl_errors_missingStage());
             }
             return FormValidation.ok();
@@ -148,7 +142,7 @@ public class ArtifactVersionRetriever extends Builder implements SimpleBuildStep
 
         @Override
         public String getDisplayName() {
-            return Messages.ArtifactVersionRetriever_DescriptorImpl_DisplayName();
+            return Messages.RetrieveArtifactsBuildStep_DescriptorImpl_DisplayName();
         }
     }
 }

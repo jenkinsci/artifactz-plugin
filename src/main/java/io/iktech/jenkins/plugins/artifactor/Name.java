@@ -34,7 +34,7 @@ public class Name extends AbstractDescribableImpl<Name> implements Serializable 
         public FormValidation doCheckName(@QueryParameter String value)
                 throws IOException, ServletException {
             if (value == null || value.length() == 0) {
-                return FormValidation.error(Messages.ArtifactVersionRetriever_DescriptorImpl_errors_missingNames());
+                return FormValidation.error(Messages.RetrieveArtifactsBuildStep_DescriptorImpl_errors_missingNames());
             }
             return FormValidation.ok();
         }

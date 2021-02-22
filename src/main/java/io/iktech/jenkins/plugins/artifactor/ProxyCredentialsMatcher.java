@@ -9,9 +9,6 @@ public class ProxyCredentialsMatcher implements CredentialsMatcher {
 
     @Override
     public boolean matches(@NonNull Credentials credentials) {
-        try {
-            return credentials instanceof StandardUsernamePasswordCredentials;
-        } catch (Throwable e) {
-            return false;
-        }    }
+        return credentials instanceof StandardUsernamePasswordCredentials;
+    }
 }

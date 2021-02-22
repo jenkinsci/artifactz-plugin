@@ -10,10 +10,6 @@ public class ArtifactorCredentialsMatcher implements CredentialsMatcher {
 
     @Override
     public boolean matches(@NonNull Credentials credentials) {
-        try {
-            return credentials instanceof StringCredentials;
-        } catch (Throwable e) {
-            return false;
-        }
+        return credentials instanceof StringCredentials;
     }
 }

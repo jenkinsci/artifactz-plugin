@@ -12,7 +12,6 @@ import io.artifactz.client.ServiceClient;
 import io.artifactz.client.exception.ClientException;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.annotation.Obsolete;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.AncestorInPath;
@@ -25,8 +24,7 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.Objects;
 
-@Obsolete
-public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep {
+public class PublishArtifactVersionBuildStep extends Builder implements SimpleBuildStep {
     private String name;
     private String description;
     private String type;
@@ -38,15 +36,15 @@ public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep
     private String version;
 
     @DataBoundConstructor
-    public ArtifactVersionPublisher(String name,
-                                    String description,
-                                    String type,
-                                    String groupId,
-                                    String artifactId,
-                                    String stage,
-                                    String flow,
-                                    String stageDescription,
-                                    String version) {
+    public PublishArtifactVersionBuildStep(String name,
+                                           String description,
+                                           String type,
+                                           String groupId,
+                                           String artifactId,
+                                           String stage,
+                                           String flow,
+                                           String stageDescription,
+                                           String version) {
         this.name = name;
         this.description = description;
         this.type = type;
@@ -239,7 +237,7 @@ public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep
 
         @Override
         public String getDisplayName() {
-            return Messages.PublishArtifactVersionBuildStep_DescriptorImpl_DisplayName() + " Deprecated";
+            return Messages.PublishArtifactVersionBuildStep_DescriptorImpl_DisplayName();
         }
 
         public ListBoxModel doFillTypeItems(@AncestorInPath ItemGroup context) {

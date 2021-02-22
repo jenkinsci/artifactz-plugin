@@ -14,7 +14,6 @@ import io.artifactz.client.ServiceClient;
 import io.artifactz.client.exception.ClientException;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.annotation.Obsolete;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -26,8 +25,7 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.Objects;
 
-@Obsolete
-public class ArtifactVersionPusher extends Builder implements SimpleBuildStep {
+public class PushArtifactVersionBuildStep extends Builder implements SimpleBuildStep {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private String name;
@@ -36,10 +34,10 @@ public class ArtifactVersionPusher extends Builder implements SimpleBuildStep {
     private String variableName;
 
     @DataBoundConstructor
-    public ArtifactVersionPusher(String name,
-                                 String stage,
-                                 String version,
-                                 String variableName) {
+    public PushArtifactVersionBuildStep(String name,
+                                        String stage,
+                                        String version,
+                                        String variableName) {
         this.name = name;
         this.stage = stage;
         this.version = version;
@@ -80,6 +78,7 @@ public class ArtifactVersionPusher extends Builder implements SimpleBuildStep {
     public void setVariableName(String variableName) {
         this.variableName = variableName;
     }
+
     @Override
     public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener) throws InterruptedException, IOException {
         final EnvVars env = run.getEnvironment(taskListener);
@@ -139,7 +138,7 @@ public class ArtifactVersionPusher extends Builder implements SimpleBuildStep {
 
         @Override
         public String getDisplayName() {
-            return Messages.PushArtifactVersionBuildStep_DescriptorImpl_DisplayName() + " Deprecated";
+            return Messages.PushArtifactVersionBuildStep_DescriptorImpl_DisplayName();
         }
     }
 }

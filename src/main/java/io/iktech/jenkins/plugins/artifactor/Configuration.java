@@ -4,7 +4,6 @@ import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
-import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import hudson.Extension;
 import hudson.Util;
@@ -16,12 +15,9 @@ import jenkins.model.GlobalConfiguration;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
@@ -32,8 +28,6 @@ import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import javax.annotation.CheckForNull;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Collections;
 
 @Extension
@@ -135,7 +129,7 @@ public class Configuration extends GlobalConfiguration {
         String proxySchema;
         String proxyHost;
         int proxyPort;
-        HttpHost proxyHttpHost = RequestHelper.getProxyHost();
+        HttpHost proxyHttpHost = ServiceHelper.getProxyHost();
 
         Jenkins.get().checkPermission(Jenkins.ADMINISTER);
 
@@ -178,8 +172,11 @@ public class Configuration extends GlobalConfiguration {
 
     @RequirePOST
     @SuppressWarnings("unused") // used by jelly
-    public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context, @QueryParameter String serverUrl) {
-        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+    public ListBoxModel doFillCredentialsIdItems(@AncestorInPath ItemGroup context, @QueryParameter String serverUrl, String credentialId) {
+        if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
+            return new StandardListBoxModel().includeCurrentValue(credentialId);
+        }
+
         StandardListBoxModel result = new StandardListBoxModel();
         result.includeEmptyValue();
         result.includeMatchingAs(
@@ -195,8 +192,11 @@ public class Configuration extends GlobalConfiguration {
 
     @RequirePOST
     @SuppressWarnings("unused") // used by jelly
-    public ListBoxModel doFillProxyCredentialsIdItems(@AncestorInPath ItemGroup context, @QueryParameter String serverUrl) {
-        Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+    public ListBoxModel doFillProxyCredentialsIdItems(@AncestorInPath ItemGroup context, @QueryParameter String serverUrl, String credentialId) {
+        if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
+            return new StandardListBoxModel().includeCurrentValue(credentialId);
+        }
+
         StandardListBoxModel result = new StandardListBoxModel();
         result.includeEmptyValue();
         result.includeMatchingAs(
