@@ -35,6 +35,7 @@ public class ServiceHelper {
         ServiceClientBuilder builder = ServiceClientBuilder
                 .withBaseUrl(Configuration.get().getServerUrl())
                 .withApiToken(token)
+                .withUserAgent("Jenkins Artifactz.io plugin/1.0")
                 .withSender("jenkins-plugin")
                 .withProxyUrl(Configuration.get().getProxy())
                 .withProxyUsername(proxyUsername)

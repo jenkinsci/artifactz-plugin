@@ -162,8 +162,9 @@ public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep
             taskListener.getLogger().println("  artifact Id: " + expandedArtifactId);
         }
         taskListener.getLogger().println("  version: " + expandedVersion);
-        StringCredentials token = CredentialsProvider.findCredentialById(Configuration.get().getCredentialsId(), StringCredentials.class, run);
+        StringCredentials token = CredentialsProvider.findCredentialById(Objects.requireNonNull(Configuration.get().getCredentialsId()), StringCredentials.class, run);
         try {
+            assert token != null;
             ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
             client.publishArtifact(expandedStage, expandedStageDescription, expandedName, expandedDescription, this.getFlow(), this.getType(), expandedGroupId, expandedArtifactId, expandedVersion);
             taskListener.getLogger().println("Successfully patched artifact version");

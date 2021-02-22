@@ -92,8 +92,9 @@ public class PushArtifactVersionBuildStep extends Builder implements SimpleBuild
         taskListener.getLogger().println("  name: " + expandedName);
         taskListener.getLogger().println("  stage: " + expandedStage);
         taskListener.getLogger().println("  version: " + expandedVersion);
-        StringCredentials token = CredentialsProvider.findCredentialById(Configuration.get().getCredentialsId(), StringCredentials.class, run);
+        StringCredentials token = CredentialsProvider.findCredentialById(Objects.requireNonNull(Configuration.get().getCredentialsId()), StringCredentials.class, run);
         try {
+            assert token != null;
             ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
             String pushedVersion;
             if (!StringUtils.isEmpty(expandedVersion)) {

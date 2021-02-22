@@ -166,8 +166,9 @@ public class PublishArtifactStep extends Step {
             PrintStream l = taskListener.getLogger();
             l.println("Pushing artifact '" + this.name + "' at the stage '" + this.stage + "'");
 
-            StringCredentials token = CredentialsProvider.findCredentialById(Configuration.get().getCredentialsId(), StringCredentials.class, run);
+            StringCredentials token = CredentialsProvider.findCredentialById(Objects.requireNonNull(Configuration.get().getCredentialsId()), StringCredentials.class, run);
             try {
+                assert token != null;
                 ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
                 client.publishArtifact(this.stage, this.stageDescription, this.name, this.description, this.flow, this.type, this.groupId, this.artifactId, this.version);
                 taskListener.getLogger().println("Successfully published artifact");

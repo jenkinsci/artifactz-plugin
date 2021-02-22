@@ -88,8 +88,9 @@ public class PushArtifactStep extends Step {
             PrintStream l = taskListener.getLogger();
             l.println("Pushing artifact '" + this.name + "' at the stage '" + this.stage + "'");
 
-            StringCredentials token = CredentialsProvider.findCredentialById(Configuration.get().getCredentialsId(), StringCredentials.class, run);
+            StringCredentials token = CredentialsProvider.findCredentialById(Objects.requireNonNull(Configuration.get().getCredentialsId()), StringCredentials.class, run);
             try {
+                assert token != null;
                 ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
                 String v = client.pushArtifact(this.stage, this.name, this.version);
                 taskListener.getLogger().println("Successfully pushed artifact versions");

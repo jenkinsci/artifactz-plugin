@@ -30,6 +30,7 @@ public class TestHelper {
         when(serviceClientBuilder.withProxyUrl(any())).thenReturn(serviceClientBuilder);
         when(serviceClientBuilder.withProxyUsername(any())).thenReturn(serviceClientBuilder);
         when(serviceClientBuilder.withProxyPassword(any())).thenReturn(serviceClientBuilder);
+        when(serviceClientBuilder.withUserAgent(any())).thenReturn(serviceClientBuilder);
         when(serviceClientBuilder.provideFeedback(any())).thenReturn(serviceClientBuilder);
         when(serviceClientBuilder.build()).thenReturn(serviceClient);
 

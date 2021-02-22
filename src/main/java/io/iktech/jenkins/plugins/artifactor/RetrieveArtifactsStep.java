@@ -73,11 +73,13 @@ public class RetrieveArtifactsStep extends Step {
             Run<?, ?> run = getContext().get(Run.class);
             TaskListener taskListener = getContext().get(TaskListener.class);
 
+            assert taskListener != null;
             PrintStream l = taskListener.getLogger();
             l.println("Retrieving versions of the following artifacts at the stage '" + this.stage + "'");
 
-            StringCredentials token = CredentialsProvider.findCredentialById(Configuration.get().getCredentialsId(), StringCredentials.class, run);
+            StringCredentials token = CredentialsProvider.findCredentialById(Objects.requireNonNull(Configuration.get().getCredentialsId()), StringCredentials.class, run);
             try {
+                assert token != null;
                 ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
                 io.artifactz.client.model.Stage stage = client.retrieveVersions(this.stage, this.names.toArray(new String[0]));
                 logger.info("Content has been converted to the object");

@@ -82,8 +82,9 @@ public class RetrieveArtifactsBuildStep extends Builder implements SimpleBuildSt
     public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener) throws InterruptedException, IOException {
         PrintStream l = taskListener.getLogger();
         l.println("Retrieving versions of the following artifacts at the stage '" + this.stage + "'");
-        StringCredentials token = CredentialsProvider.findCredentialById(Configuration.get().getCredentialsId(), StringCredentials.class, run);
+        StringCredentials token = CredentialsProvider.findCredentialById(Objects.requireNonNull(Configuration.get().getCredentialsId()), StringCredentials.class, run);
         try {
+            assert token != null;
             ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
             List<String> artifacts = new ArrayList<>();
             for (Name name : this.getNames()) {

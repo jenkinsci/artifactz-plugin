@@ -1,4 +1,4 @@
-version = "1.0.0"
+version = "1.1.0"
 projectName = "artifactor-plugin"
 
 podTemplate(label: 'jpod', cloud: 'kubernetes', serviceAccount: 'jenkins',
@@ -20,6 +20,7 @@ podTemplate(label: 'jpod', cloud: 'kubernetes', serviceAccount: 'jenkins',
         stage('Build Java Code') {
             container('java') {
                 try {
+                    sh "mvn versions:set -DnewVersion=${version}.${BUILD_NUMBER}"
                     sh 'mvn compile test jacoco:report hpi:hpi'
                     step([$class: 'ArtifactArchiver', artifacts: 'target/*.hpi', fingerprint: true])
                 } catch (error) {
