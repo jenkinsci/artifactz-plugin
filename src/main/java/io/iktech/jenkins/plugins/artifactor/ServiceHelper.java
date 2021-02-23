@@ -22,6 +22,10 @@ import java.net.URL;
 import java.util.Collections;
 
 public class ServiceHelper {
+    public static ServiceClient getClient(String token) throws ClientException {
+        return getClient(null, token);
+    }
+
     public static ServiceClient getClient(TaskListener taskListener, String token) throws ClientException {
         String proxyUsername = null;
         String proxyPassword = null;
@@ -40,7 +44,7 @@ public class ServiceHelper {
                 .withProxyUrl(Configuration.get().getProxy())
                 .withProxyUsername(proxyUsername)
                 .withProxyPassword(proxyPassword)
-                .provideFeedback(new FeedbackImpl(taskListener));
+                .provideFeedback(taskListener != null ? new FeedbackImpl(taskListener) : null);
 
         return builder.build();
     }

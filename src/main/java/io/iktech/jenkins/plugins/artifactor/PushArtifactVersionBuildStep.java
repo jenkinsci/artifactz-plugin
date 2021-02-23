@@ -1,7 +1,6 @@
 package io.iktech.jenkins.plugins.artifactor;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import hudson.*;
 import hudson.model.AbstractProject;
 import hudson.model.Result;
@@ -26,8 +25,6 @@ import java.io.IOException;
 import java.util.Objects;
 
 public class PushArtifactVersionBuildStep extends Builder implements SimpleBuildStep {
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-
     private String name;
     private String stage;
     private String version;

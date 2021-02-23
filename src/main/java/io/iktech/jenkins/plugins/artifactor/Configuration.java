@@ -11,16 +11,11 @@ import hudson.model.ItemGroup;
 import hudson.security.ACL;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import io.artifactz.client.ServiceClient;
+import io.artifactz.client.exception.ClientException;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpHost;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -126,18 +121,11 @@ public class Configuration extends GlobalConfiguration {
                                            @QueryParameter String credentialsId,
                                            @QueryParameter String proxy,
                                            @QueryParameter String proxyCredentialsId) throws Exception {
-        String proxySchema;
-        String proxyHost;
-        int proxyPort;
-        HttpHost proxyHttpHost = ServiceHelper.getProxyHost();
-
         Jenkins.get().checkPermission(Jenkins.ADMINISTER);
 
         if (StringUtils.isBlank(serverUrl)) {
             return FormValidation.error("name is required");
         }
-
-        HttpClientBuilder clientbuilder = HttpClients.custom();
 
         StringCredentials credentials = CredentialsMatchers.firstOrNull(
                 CredentialsProvider.lookupCredentials(
@@ -147,23 +135,12 @@ public class Configuration extends GlobalConfiguration {
                         Collections.emptyList()
                 ), CredentialsMatchers.withId(credentialsId));
         if (credentials != null && credentials.getSecret() != null) {
-            CloseableHttpClient client = clientbuilder.build();
-
-            HttpGet validate = new HttpGet(serverUrl + "/validate");
-
-            if (proxyHttpHost != null) {
-                RequestConfig.Builder reqconfigconbuilder = RequestConfig.custom();
-                reqconfigconbuilder = reqconfigconbuilder.setProxy(proxyHttpHost);
-                RequestConfig config = reqconfigconbuilder.build();
-                validate.setConfig(config);
-            }
-
-            validate.setHeader("Authorization", "Bearer " + credentials.getSecret().getPlainText());
-            CloseableHttpResponse response = client.execute(validate);
-            if (response.getStatusLine().getStatusCode() != 200) {
-                return FormValidation.error("Connection failed with status code: " + response.getStatusLine().getStatusCode());
-            } else {
+            try {
+                ServiceClient client = ServiceHelper.getClient(credentials.getSecret().getPlainText());
+                client.validateConnection();
                 return FormValidation.ok("Connection test successful");
+            } catch (ClientException e) {
+                return FormValidation.error("Connection failed : " + e.getMessage());
             }
         } else {
             return FormValidation.error("Cannot validate connection without proper credentials");

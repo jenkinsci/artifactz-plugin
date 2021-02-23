@@ -10,7 +10,7 @@ public class FeedbackImpl implements Feedback {
     private final PrintStream logger;
 
     public FeedbackImpl(TaskListener taskListener) {
-        this.logger = taskListener.getLogger();
+        this.logger = taskListener != null ? taskListener.getLogger() : System.out;
     }
 
     @Override
