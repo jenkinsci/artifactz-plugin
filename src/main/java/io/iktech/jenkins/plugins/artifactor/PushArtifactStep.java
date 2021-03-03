@@ -88,9 +88,19 @@ public class PushArtifactStep extends Step {
             PrintStream l = taskListener.getLogger();
             l.println("Pushing artifact '" + this.name + "' at the stage '" + this.stage + "'");
 
-            StringCredentials token = CredentialsProvider.findCredentialById(Objects.requireNonNull(Configuration.get().getCredentialsId()), StringCredentials.class, run);
+            String credentialsId = Configuration.get().getCredentialsId();
+            if (credentialsId == null) {
+                ServiceHelper.interruptExecution(run, taskListener, "Artifactz access credentials are not defined. Cannot continue.");
+                throw new AbortException("Artifactz access credentials are not defined. Cannot continue.");
+            }
+
+            StringCredentials token = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run);
+            if (token == null) {
+                ServiceHelper.interruptExecution(run, taskListener, "Could not find specified credentials. Cannot continue.");
+                throw new AbortException("Could not find specified credentials. Cannot continue.");
+            }
+
             try {
-                assert token != null;
                 ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
                 String v = client.pushArtifact(this.stage, this.name, this.version);
                 taskListener.getLogger().println("Successfully pushed artifact versions");
@@ -98,8 +108,7 @@ public class PushArtifactStep extends Step {
             } catch (ClientException e) {
                 logger.error("Error while pushing artifact version", e);
                 String errorMessage = "Error while pushing artifact version: " + e.getMessage();
-                taskListener.fatalError(errorMessage);
-                Objects.requireNonNull(run.getExecutor()).interrupt(Result.FAILURE);
+                ServiceHelper.interruptExecution(run, taskListener, errorMessage);
                 throw new AbortException(errorMessage);
             }
         }

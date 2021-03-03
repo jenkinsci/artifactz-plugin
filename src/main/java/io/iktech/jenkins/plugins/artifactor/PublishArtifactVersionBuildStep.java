@@ -160,15 +160,25 @@ public class PublishArtifactVersionBuildStep extends Builder implements SimpleBu
             taskListener.getLogger().println("  artifact Id: " + expandedArtifactId);
         }
         taskListener.getLogger().println("  version: " + expandedVersion);
-        StringCredentials token = CredentialsProvider.findCredentialById(Objects.requireNonNull(Configuration.get().getCredentialsId()), StringCredentials.class, run);
+
+        String credentialsId = Configuration.get().getCredentialsId();
+        if (credentialsId == null) {
+            ServiceHelper.interruptExecution(run, taskListener, "Artifactz access credentials are not defined. Cannot continue.");
+            throw new AbortException("Artifactz access credentials are not defined. Cannot continue.");
+        }
+
+        StringCredentials token = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run);
+        if (token == null) {
+            ServiceHelper.interruptExecution(run, taskListener, "Could not find specified credentials. Cannot continue.");
+            throw new AbortException("Could not find specified credentials. Cannot continue.");
+        }
+
         try {
-            assert token != null;
             ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
             client.publishArtifact(expandedStage, expandedStageDescription, expandedName, expandedDescription, this.getFlow(), this.getType(), expandedGroupId, expandedArtifactId, expandedVersion);
             taskListener.getLogger().println("Successfully patched artifact version");
         } catch (ClientException e) {
-            taskListener.fatalError(e.getMessage());
-            Objects.requireNonNull(run.getExecutor()).interrupt(Result.FAILURE);
+            ServiceHelper.interruptExecution(run, taskListener, e.getMessage());
             throw new AbortException(e.getMessage());
         }
     }

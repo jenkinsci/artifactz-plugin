@@ -60,8 +60,8 @@ public class RetrieveArtifactsStep extends Step {
     private static final class Execution extends SynchronousNonBlockingStepExecution<Map<String, String>> {
         private static final long serialVersionUID = 6190377462479580850L;
 
-        private String stage;
-        private List<String> names;
+        private final String stage;
+        private final List<String> names;
 
         Execution(String stage, List<String> names, StepContext context) {
             super(context);
@@ -77,28 +77,34 @@ public class RetrieveArtifactsStep extends Step {
             PrintStream l = taskListener.getLogger();
             l.println("Retrieving versions of the following artifacts at the stage '" + this.stage + "'");
 
-            StringCredentials token = CredentialsProvider.findCredentialById(Objects.requireNonNull(Configuration.get().getCredentialsId()), StringCredentials.class, run);
+            String credentialsId = Configuration.get().getCredentialsId();
+            if (credentialsId == null) {
+                ServiceHelper.interruptExecution(run, taskListener, "Artifactz access credentials are not defined. Cannot continue.");
+                throw new AbortException("Artifactz access credentials are not defined. Cannot continue.");
+            }
+
+            StringCredentials token = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run);
+            if (token == null) {
+                ServiceHelper.interruptExecution(run, taskListener, "Could not find specified credentials. Cannot continue.");
+                throw new AbortException("Could not find specified credentials. Cannot continue.");
+            }
+
             try {
-                assert token != null;
                 ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
                 io.artifactz.client.model.Stage stage = client.retrieveVersions(this.stage, this.names.toArray(new String[0]));
                 logger.info("Content has been converted to the object");
-                EnvVars envVars = run.getEnvironment(taskListener);
-                String content;
                 if (stage.getArtifacts() != null) {
                     l.println("Successfully retrieved artifact versions");
                     return stage.getArtifacts().stream().collect(Collectors.toMap(Version::getArtifactName, Version::getVersion));
                 }
                 String errorMessage = "No artifacts data in the response";
-                taskListener.fatalError(errorMessage);
                 logger.info("Service returned empty result set");
-                Objects.requireNonNull(run.getExecutor()).interrupt(Result.FAILURE);
+                ServiceHelper.interruptExecution(run, taskListener, errorMessage);
                 throw new AbortException(errorMessage);
             } catch (ClientException e) {
                 logger.error("Error while retrieving artifact versions", e);
                 String errorMessage = "Error while retrieving artifact versions: " + e.getMessage();
-                taskListener.fatalError(errorMessage);
-                Objects.requireNonNull(run.getExecutor()).interrupt(Result.FAILURE);
+                ServiceHelper.interruptExecution(run, taskListener, errorMessage);
                 throw new AbortException(errorMessage);
             }
         }

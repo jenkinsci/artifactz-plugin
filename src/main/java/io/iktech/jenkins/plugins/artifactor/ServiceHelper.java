@@ -3,6 +3,10 @@ package io.iktech.jenkins.plugins.artifactor;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import hudson.AbortException;
+import hudson.model.Executor;
+import hudson.model.Result;
+import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.security.ACL;
 import io.artifactz.client.ServiceClient;
@@ -17,6 +21,7 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 
+import javax.annotation.Nonnull;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
@@ -24,6 +29,14 @@ import java.util.Collections;
 public class ServiceHelper {
     public static ServiceClient getClient(String token) throws ClientException {
         return getClient(null, token);
+    }
+
+    public static void interruptExecution(@Nonnull Run<?, ?> run, @Nonnull TaskListener taskListener, String message) {
+        taskListener.fatalError(message);
+        Executor executor = run.getExecutor();
+        if (executor != null) {
+            executor.interrupt(Result.FAILURE);
+        }
     }
 
     public static ServiceClient getClient(TaskListener taskListener, String token) throws ClientException {

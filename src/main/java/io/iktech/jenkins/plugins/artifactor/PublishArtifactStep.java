@@ -136,15 +136,15 @@ public class PublishArtifactStep extends Step {
     private static final class Execution extends SynchronousNonBlockingStepExecution<Boolean> {
         private static final long serialVersionUID = 4829381492818317576L;
 
-        private String name;
-        private String description;
-        private String type;
-        private String groupId;
-        private String artifactId;
-        private String stage;
-        private String flow;
-        private String stageDescription;
-        private String version;
+        private final String name;
+        private final String description;
+        private final String type;
+        private final String groupId;
+        private final String artifactId;
+        private final String stage;
+        private final String flow;
+        private final String stageDescription;
+        private final String version;
 
         Execution(String name, String description, String type, String flow, String stage, String stageDescription, String groupId, String artifactId, String version, StepContext context) {
             super(context);
@@ -166,17 +166,26 @@ public class PublishArtifactStep extends Step {
             PrintStream l = taskListener.getLogger();
             l.println("Pushing artifact '" + this.name + "' at the stage '" + this.stage + "'");
 
-            StringCredentials token = CredentialsProvider.findCredentialById(Objects.requireNonNull(Configuration.get().getCredentialsId()), StringCredentials.class, run);
+            String credentialsId = Configuration.get().getCredentialsId();
+            if (credentialsId == null) {
+                ServiceHelper.interruptExecution(run, taskListener, "Artifactz access credentials are not defined. Cannot continue.");
+                throw new AbortException("Artifactz access credentials are not defined. Cannot continue.");
+            }
+
+            StringCredentials token = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run);
+            if (token == null) {
+                ServiceHelper.interruptExecution(run, taskListener, "Could not find specified credentials. Cannot continue.");
+                throw new AbortException("Could not find specified credentials. Cannot continue.");
+            }
+
             try {
-                assert token != null;
                 ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
                 client.publishArtifact(this.stage, this.stageDescription, this.name, this.description, this.flow, this.type, this.groupId, this.artifactId, this.version);
                 taskListener.getLogger().println("Successfully published artifact");
             } catch (ClientException e) {
                 logger.error("Error while publishing artifact", e);
                 String errorMessage = "Error while publishing artifact: " + e.getMessage();
-                taskListener.fatalError(errorMessage);
-                Objects.requireNonNull(run.getExecutor()).interrupt(Result.FAILURE);
+                ServiceHelper.interruptExecution(run, taskListener, errorMessage);
                 throw new AbortException(errorMessage);
             }
 

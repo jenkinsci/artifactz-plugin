@@ -89,9 +89,20 @@ public class PushArtifactVersionBuildStep extends Builder implements SimpleBuild
         taskListener.getLogger().println("  name: " + expandedName);
         taskListener.getLogger().println("  stage: " + expandedStage);
         taskListener.getLogger().println("  version: " + expandedVersion);
-        StringCredentials token = CredentialsProvider.findCredentialById(Objects.requireNonNull(Configuration.get().getCredentialsId()), StringCredentials.class, run);
+
+        String credentialsId = Configuration.get().getCredentialsId();
+        if (credentialsId == null) {
+            ServiceHelper.interruptExecution(run, taskListener, "Artifactz access credentials are not defined. Cannot continue.");
+            throw new AbortException("Artifactz access credentials are not defined. Cannot continue.");
+        }
+
+        StringCredentials token = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run);
+        if (token == null) {
+            ServiceHelper.interruptExecution(run, taskListener, "Could not find specified credentials. Cannot continue.");
+            throw new AbortException("Could not find specified credentials. Cannot continue.");
+        }
+
         try {
-            assert token != null;
             ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
             String pushedVersion;
             if (!StringUtils.isEmpty(expandedVersion)) {
@@ -103,8 +114,7 @@ public class PushArtifactVersionBuildStep extends Builder implements SimpleBuild
             run.addAction(new InjectVariable(variableName, pushedVersion));
             taskListener.getLogger().println("Successfully pushed artifact version");
         } catch (ClientException e) {
-            taskListener.fatalError(e.getMessage());
-            Objects.requireNonNull(run.getExecutor()).interrupt(Result.FAILURE);
+            ServiceHelper.interruptExecution(run, taskListener, e.getMessage());
             throw new AbortException(e.getMessage());
         }
     }

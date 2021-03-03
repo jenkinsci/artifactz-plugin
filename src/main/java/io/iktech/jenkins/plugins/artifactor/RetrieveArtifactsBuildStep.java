@@ -82,9 +82,20 @@ public class RetrieveArtifactsBuildStep extends Builder implements SimpleBuildSt
     public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener) throws InterruptedException, IOException {
         PrintStream l = taskListener.getLogger();
         l.println("Retrieving versions of the following artifacts at the stage '" + this.stage + "'");
-        StringCredentials token = CredentialsProvider.findCredentialById(Objects.requireNonNull(Configuration.get().getCredentialsId()), StringCredentials.class, run);
+
+        String credentialsId = Configuration.get().getCredentialsId();
+        if (credentialsId == null) {
+            ServiceHelper.interruptExecution(run, taskListener, "Artifactz access credentials are not defined. Cannot continue.");
+            throw new AbortException("Artifactz access credentials are not defined. Cannot continue.");
+        }
+
+        StringCredentials token = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run);
+        if (token == null) {
+            ServiceHelper.interruptExecution(run, taskListener, "Could not find specified credentials. Cannot continue.");
+            throw new AbortException("Could not find specified credentials. Cannot continue.");
+        }
+
         try {
-            assert token != null;
             ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
             List<String> artifacts = new ArrayList<>();
             for (Name name : this.getNames()) {
@@ -100,9 +111,8 @@ public class RetrieveArtifactsBuildStep extends Builder implements SimpleBuildSt
                 content = objectMapper.writeValueAsString(stage.getArtifacts().stream().collect(Collectors.toMap(Version::getArtifactName, Version::getVersion)));
             } else {
                 String errorMessage = "No artifacts data in the response";
-                taskListener.fatalError(errorMessage);
                 logger.info("Service returned empty result set");
-                Objects.requireNonNull(run.getExecutor()).interrupt(Result.FAILURE);
+                ServiceHelper.interruptExecution(run, taskListener, errorMessage);
                 throw new AbortException(errorMessage);
             }
             envVars.put("_response", content);
@@ -113,8 +123,7 @@ public class RetrieveArtifactsBuildStep extends Builder implements SimpleBuildSt
         } catch (ClientException e) {
             logger.error("Error while retrieving artifact versions", e);
             String errorMessage = "Error while retrieving artifact versions: " + e.getMessage();
-            taskListener.fatalError(errorMessage);
-            Objects.requireNonNull(run.getExecutor()).interrupt(Result.FAILURE);
+            ServiceHelper.interruptExecution(run, taskListener, errorMessage);
             throw new AbortException(errorMessage);
         }
     }
