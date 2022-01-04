@@ -106,7 +106,7 @@ public class ArtifactVersionPublisherTest {
     @Test
     public void descriptorDisplayNameTest() throws Exception {
         ArtifactVersionPublisher publisher = new ArtifactVersionPublisher("test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
-        assertEquals("Send Artifact Version To Artifactor Deprecated", ((ArtifactVersionPublisher.DescriptorImpl)publisher.getDescriptor()).getDisplayName());
+        assertEquals("Send Artifact Version To Artifactor Web Service Deprecated", ((ArtifactVersionPublisher.DescriptorImpl)publisher.getDescriptor()).getDisplayName());
     }
 
     @Test

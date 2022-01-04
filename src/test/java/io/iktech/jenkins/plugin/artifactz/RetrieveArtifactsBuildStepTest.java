@@ -183,7 +183,7 @@ public class RetrieveArtifactsBuildStepTest {
         names.add(name);
 
         RetrieveArtifactsBuildStep publisher = new RetrieveArtifactsBuildStep(names, "Development", null);
-        assertEquals("Retrieve artifact version for stage", ((RetrieveArtifactsBuildStep.DescriptorImpl)publisher.getDescriptor()).getDisplayName());
+        assertEquals("Retrieve Artifact version for stage", ((RetrieveArtifactsBuildStep.DescriptorImpl)publisher.getDescriptor()).getDisplayName());
     }
 
     @Test
