@@ -1,5 +1,5 @@
 version = "1.1.0"
-projectName = "artifactor-plugin"
+projectName = "artifactz-plugin"
 
 podTemplate(label: 'jpod', cloud: 'kubernetes', serviceAccount: 'jenkins',
     containers: [
