@@ -12,7 +12,7 @@
     <artifactId>artifactz</artifactId>
     <version>${revision}-${changelist}</version>
     <name>Artifactz.io Plugin</name>
-    <description>This plugin allows to exchange artifact details between pipeline or freestyle project Artifactorz.io Web Service</description>
+    <description>This plugin allows to exchange artifact details between pipeline or freestyle project Artifactz.io Web Service</description>
     <url>https://artifactz.io</url>
     <packaging>hpi</packaging>
     <licenses>
@@ -52,7 +52,7 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>credentials</artifactId>
-            <version>2.3.14</version>
+            <version>2.3.19</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
@@ -77,7 +77,7 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>structs</artifactId>
-            <version>1.20</version>
+            <version>1.22</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins.workflow</groupId>

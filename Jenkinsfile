@@ -3,7 +3,7 @@ projectName = "artifactor-plugin"
 
 podTemplate(label: 'jpod', cloud: 'kubernetes', serviceAccount: 'jenkins',
     containers: [
-    containerTemplate(name: 'java', image: 'maven:3.6.3-openjdk-8', resourceRequestMemory: '2048Mi', resourceLimitMemory: '2048Mi', resourceRequestCpu: '1000m', resourceLimitCpu: '1200m', ttyEnabled: true, command: 'cat'),
+    containerTemplate(name: 'java', image: 'maven:3.8.4-openjdk-8', resourceRequestMemory: '2048Mi', resourceLimitMemory: '2048Mi', resourceRequestCpu: '1000m', resourceLimitCpu: '1200m', ttyEnabled: true, command: 'cat'),
     containerTemplate(name: 'sonarqube', image: 'iktech/sonarqube-scanner', ttyEnabled: true, command: 'cat'),
     ],
     volumes: [

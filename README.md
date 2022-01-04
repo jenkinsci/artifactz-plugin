@@ -77,7 +77,7 @@ Parameter | Description | Notes
 name | Artifact name | The name of the artifact to push, e.g. artifactor-plugin
 stage | The SDLC stage | The stage in the process from where the version will be pushed
 version | Artifact version | The artifact version to push (optional, if omitted the current version at the stage will be pushed)
-variableName | Variable Name | The variable name where the pushed version will be stored, default ARTIFACTOR_VERSION
+variableName | Variable Name | The variable name where the pushed version will be stored, default ARTIFACTZ_VERSION
 
 For example:
 ```
