@@ -13,7 +13,14 @@
     <version>${revision}-${changelist}</version>
     <name>Artifactz.io Plugin</name>
     <description>This plugin allows to exchange artifact details between pipeline or freestyle project Artifactz.io Web Service</description>
-    <url>https://artifactz.io</url>
+    <url>https://github.com/jenkinsci/artifactz-plugin</url>
+    <developers>
+        <developer>
+            <id>ikolomiyets</id>
+            <name>Igor Kolomiyets</name>
+            <email>igor.kolomiyets@iktech.io</email>
+        </developer>
+    </developers>
     <packaging>hpi</packaging>
     <licenses>
         <license>
@@ -209,7 +216,7 @@
         <dependency>
             <groupId>io.iktech</groupId>
             <artifactId>artifactz-client</artifactId>
-            <version>1.1.2</version>
+            <version>1.1.4</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
