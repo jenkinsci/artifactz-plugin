@@ -22,18 +22,30 @@ import java.util.Set;
 
 public class PublishArtifactStep extends Step {
     private static final Logger logger = LoggerFactory.getLogger(PublishArtifactStep.class);
+
+    private String token;
+
     private String name;
+
     private String description;
+
     private String type;
+
     private String groupId;
+
     private String artifactId;
+
     private String stage;
+
     private String flow;
+
     private String stageDescription;
+
     private String version;
 
     @DataBoundConstructor
-    public PublishArtifactStep(String name, String description, String type, String flow, String stage, String stageDescription, String groupId, String artifactId, String version) {
+    public PublishArtifactStep(String token, String name, String description, String type, String flow, String stage, String stageDescription, String groupId, String artifactId, String version) {
+        this.token = token;
         this.name = name;
         this.description = description;
         this.type = type;
@@ -43,6 +55,15 @@ public class PublishArtifactStep extends Step {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    @DataBoundSetter
+    public void setToken(String token) {
+        this.token = token;
     }
 
     public String getStage() {
@@ -128,24 +149,35 @@ public class PublishArtifactStep extends Step {
 
     @Override
     public StepExecution start(StepContext context) throws Exception {
-        return new PublishArtifactStep.Execution(this.name, this.description, this.type, this.flow, this.stage, this.stageDescription, this.groupId, this.artifactId, this.version, context);
+        return new PublishArtifactStep.Execution(this.token, this.name, this.description, this.type, this.flow, this.stage, this.stageDescription, this.groupId, this.artifactId, this.version, context);
     }
 
     private static final class Execution extends SynchronousNonBlockingStepExecution<Boolean> {
         private static final long serialVersionUID = 4829381492818317576L;
 
+        private final String token;
+
         private final String name;
+
         private final String description;
+
         private final String type;
+
         private final String groupId;
+
         private final String artifactId;
+
         private final String stage;
+
         private final String flow;
+
         private final String stageDescription;
+
         private final String version;
 
-        Execution(String name, String description, String type, String flow, String stage, String stageDescription, String groupId, String artifactId, String version, StepContext context) {
+        Execution(String token, String name, String description, String type, String flow, String stage, String stageDescription, String groupId, String artifactId, String version, StepContext context) {
             super(context);
+            this.token = token;
             this.name = name;
             this.description = description;
             this.type = type;
@@ -170,14 +202,8 @@ public class PublishArtifactStep extends Step {
                 throw new AbortException("Artifactz access credentials are not defined. Cannot continue.");
             }
 
-            StringCredentials token = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run);
-            if (token == null) {
-                ServiceHelper.interruptExecution(run, taskListener, "Could not find specified credentials. Cannot continue.");
-                throw new AbortException("Could not find specified credentials. Cannot continue.");
-            }
-
             try {
-                ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
+                ServiceClient client = ServiceHelper.getClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
                 client.publishArtifact(this.stage, this.stageDescription, this.name, this.description, this.flow, this.type, this.groupId, this.artifactId, this.version);
                 taskListener.getLogger().println("Successfully published artifact");
             } catch (ClientException e) {

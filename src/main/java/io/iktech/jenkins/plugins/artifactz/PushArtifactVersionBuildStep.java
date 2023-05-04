@@ -23,20 +23,36 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 
 public class PushArtifactVersionBuildStep extends Builder implements SimpleBuildStep {
+    private String token;
+
     private String name;
+
     private String stage;
+
     private String version;
+
     private String variableName;
 
     @DataBoundConstructor
-    public PushArtifactVersionBuildStep(String name,
+    public PushArtifactVersionBuildStep(String token,
+                                        String name,
                                         String stage,
                                         String version,
                                         String variableName) {
+        this.token = token;
         this.name = name;
         this.stage = stage;
         this.version = version;
         this.variableName = variableName;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    @DataBoundSetter
+    public void setToken(String token) {
+        this.token = token;
     }
 
     public String getName() {
@@ -88,20 +104,8 @@ public class PushArtifactVersionBuildStep extends Builder implements SimpleBuild
         taskListener.getLogger().println("  stage: " + expandedStage);
         taskListener.getLogger().println("  version: " + expandedVersion);
 
-        String credentialsId = Configuration.get().getCredentialsId();
-        if (credentialsId == null) {
-            ServiceHelper.interruptExecution(run, taskListener, "Artifactz access credentials are not defined. Cannot continue.");
-            throw new AbortException("Artifactz access credentials are not defined. Cannot continue.");
-        }
-
-        StringCredentials token = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run);
-        if (token == null) {
-            ServiceHelper.interruptExecution(run, taskListener, "Could not find specified credentials. Cannot continue.");
-            throw new AbortException("Could not find specified credentials. Cannot continue.");
-        }
-
         try {
-            ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
+            ServiceClient client = ServiceHelper.getClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
             String pushedVersion;
             if (!StringUtils.isEmpty(expandedVersion)) {
                 pushedVersion = client.pushArtifact(expandedStage, expandedName, expandedVersion);

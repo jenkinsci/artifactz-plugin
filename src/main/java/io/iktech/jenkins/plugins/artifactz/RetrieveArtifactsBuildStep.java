@@ -34,18 +34,33 @@ public class RetrieveArtifactsBuildStep extends Builder implements SimpleBuildSt
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static Logger logger = LoggerFactory.getLogger(RetrieveArtifactsBuildStep.class);
 
+    private String token;
+
     private List<Name> names;
+
     private String stage;
+
     private String variableName;
 
     @DataBoundConstructor
-    public RetrieveArtifactsBuildStep(List<Name> names,
+    public RetrieveArtifactsBuildStep(String token,
+                                      List<Name> names,
                                       String stage,
                                       String variableName) {
         logger.info("Creating builder. Stage: " + stage + ", names: " + names.size());
+        this.token = token;
         this.names = names;
         this.stage  = stage;
         this.variableName = variableName;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    @DataBoundSetter
+    public void setToken(String token) {
+        this.token = token;
     }
 
     public List<Name> getNames() {
@@ -81,20 +96,8 @@ public class RetrieveArtifactsBuildStep extends Builder implements SimpleBuildSt
         PrintStream l = taskListener.getLogger();
         l.println("Retrieving versions of the following artifacts at the stage '" + this.stage + "'");
 
-        String credentialsId = Configuration.get().getCredentialsId();
-        if (credentialsId == null) {
-            ServiceHelper.interruptExecution(run, taskListener, "Artifactz access credentials are not defined. Cannot continue.");
-            throw new AbortException("Artifactz access credentials are not defined. Cannot continue.");
-        }
-
-        StringCredentials token = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run);
-        if (token == null) {
-            ServiceHelper.interruptExecution(run, taskListener, "Could not find specified credentials. Cannot continue.");
-            throw new AbortException("Could not find specified credentials. Cannot continue.");
-        }
-
         try {
-            ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
+            ServiceClient client = ServiceHelper.getClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
             List<String> artifacts = new ArrayList<>();
             for (Name name : this.getNames()) {
                 artifacts.add(name.getName());

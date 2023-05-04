@@ -24,18 +24,29 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 
 public class PublishArtifactVersionBuildStep extends Builder implements SimpleBuildStep {
+    private String token;
+
     private String name;
+
     private String description;
+
     private String type;
+
     private String groupId;
+
     private String artifactId;
+
     private String stage;
+
     private String flow;
+
     private String stageDescription;
+
     private String version;
 
     @DataBoundConstructor
-    public PublishArtifactVersionBuildStep(String name,
+    public PublishArtifactVersionBuildStep(String token,
+                                           String name,
                                            String description,
                                            String type,
                                            String groupId,
@@ -44,6 +55,7 @@ public class PublishArtifactVersionBuildStep extends Builder implements SimpleBu
                                            String flow,
                                            String stageDescription,
                                            String version) {
+        this.token = token;
         this.name = name;
         this.description = description;
         this.type = type;
@@ -53,6 +65,15 @@ public class PublishArtifactVersionBuildStep extends Builder implements SimpleBu
         this.flow = flow;
         this.stageDescription = stageDescription;
         this.version = version;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    @DataBoundSetter
+    public void setToken(String token) {
+        this.token = token;
     }
 
     public String getName() {
@@ -160,20 +181,8 @@ public class PublishArtifactVersionBuildStep extends Builder implements SimpleBu
         }
         taskListener.getLogger().println("  version: " + expandedVersion);
 
-        String credentialsId = Configuration.get().getCredentialsId();
-        if (credentialsId == null) {
-            ServiceHelper.interruptExecution(run, taskListener, "Artifactz access credentials are not defined. Cannot continue.");
-            throw new AbortException("Artifactz access credentials are not defined. Cannot continue.");
-        }
-
-        StringCredentials token = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run);
-        if (token == null) {
-            ServiceHelper.interruptExecution(run, taskListener, "Could not find specified credentials. Cannot continue.");
-            throw new AbortException("Could not find specified credentials. Cannot continue.");
-        }
-
         try {
-            ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
+            ServiceClient client = ServiceHelper.getClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
             client.publishArtifact(expandedStage, expandedStageDescription, expandedName, expandedDescription, this.getFlow(), this.getType(), expandedGroupId, expandedArtifactId, expandedVersion);
             taskListener.getLogger().println("Successfully patched artifact version");
         } catch (ClientException e) {

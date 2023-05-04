@@ -50,10 +50,12 @@ public class PushArtifactStepTest {
 
     @Test
     public void gettersAndSettersTest() throws Exception {
-        PushArtifactStep test = new PushArtifactStep(null, null, null, null);
+        PushArtifactStep test = new PushArtifactStep(null, null, null, null, null);
+        test.setToken("54156708-00ea-418d-b125-b5c3bf1a0e0a");
         test.setStage("Development");
         test.setName("test-artifact");
         test.setVersion("1.0.0");
+        assertEquals("54156708-00ea-418d-b125-b5c3bf1a0e0a", test.getToken());
         assertEquals("Development", test.getStage());
         assertEquals("test-artifact", test.getName());
         assertEquals("1.0.0", test.getVersion());
@@ -71,6 +73,28 @@ public class PushArtifactStepTest {
         project.setDefinition(new CpsFlowDefinition("" +
                 "node {" +
                 "  def version = pushArtifact stage: 'Development', name: 'test-artifact'\n" +
+                "  echo \"Version: ${version}\"\n" +
+                "}", true));
+
+        WorkflowRun build = project.scheduleBuild2(0).get();
+        System.out.println(build.getDisplayName() + " completed");
+        String s = FileUtils.readFileToString(build.getLogFile());
+        assertThat(s, containsString("Successfully pushed artifact versions"));
+        assertThat(s, containsString("Version: 1.0.0"));
+    }
+
+    @Test
+    public void pushArtifactWithTokenSuccessTest() throws Exception {
+        ServiceClient client = TestHelper.setupClient();
+
+        List<Version> artifacts = new ArrayList<>();
+
+        when(client.pushArtifact(eq("Development"), eq("test-artifact"), any())).thenReturn("1.0.0");
+
+        WorkflowJob project = j.createProject(WorkflowJob.class);
+        project.setDefinition(new CpsFlowDefinition("" +
+                "node {" +
+                "  def version = pushArtifact token: '9c9696fa-129c-49c3-93a8-2db0e6657f5e', stage: 'Development', name: 'test-artifact'\n" +
                 "  echo \"Version: ${version}\"\n" +
                 "}", true));
 

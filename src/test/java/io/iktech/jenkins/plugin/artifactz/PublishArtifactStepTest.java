@@ -47,7 +47,8 @@ public class PublishArtifactStepTest {
 
     @Test
     public void gettersAndSettersTest() throws Exception {
-        PublishArtifactStep test = new PublishArtifactStep(null, null, null, null, null, null, null, null, null);
+        PublishArtifactStep test = new PublishArtifactStep(null, null, null, null, null, null, null, null, null, null);
+        test.setToken("72bdcd31-03d0-47c6-bfa2-5455b44feb44");
         test.setName("test-artifact");
         test.setDescription("Test Artifact");
         test.setStage("Development");
@@ -57,6 +58,7 @@ public class PublishArtifactStepTest {
         test.setGroupId("io.iktech.test");
         test.setArtifactId("test-artifact");
         test.setVersion("1.0.0");
+        assertEquals("72bdcd31-03d0-47c6-bfa2-5455b44feb44", test.getToken());
         assertEquals("test-artifact", test.getName());
         assertEquals("Test Artifact", test.getDescription());
         assertEquals("Development", test.getStage());
@@ -76,6 +78,22 @@ public class PublishArtifactStepTest {
         project.setDefinition(new CpsFlowDefinition("" +
                 "node {" +
                 "  publishArtifact stage: 'Development', name: 'test-artifact', type: 'DockerImage', version: '1.0.0'\n" +
+                "}", true));
+
+        WorkflowRun build = project.scheduleBuild2(0).get();
+        System.out.println(build.getDisplayName() + " completed");
+        String s = FileUtils.readFileToString(build.getLogFile());
+        assertThat(s, containsString("Successfully published artifact"));
+    }
+
+    @Test
+    public void publishArtifactWithTokensSuccessTest() throws Exception {
+        TestHelper.setupClient();
+
+        WorkflowJob project = j.createProject(WorkflowJob.class);
+        project.setDefinition(new CpsFlowDefinition("" +
+                "node {" +
+                "  publishArtifact token: 'f10b9da8-7d08-4fe4-9e45-e88d4e126132', stage: 'Development', name: 'test-artifact', type: 'DockerImage', version: '1.0.0'\n" +
                 "}", true));
 
         WorkflowRun build = project.scheduleBuild2(0).get();
