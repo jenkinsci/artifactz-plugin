@@ -107,7 +107,7 @@ public class RetrieveArtifactsStep extends Step {
             } catch (ClientException e) {
                 logger.error("Error while retrieving artifact versions", e);
                 String errorMessage = "Error while retrieving artifact versions: " + e.getMessage();
-                ServiceHelper.interruptExecution(run, taskListener, errorMessage);
+                ServiceHelper.interruptExecution(run, taskListener, "Error while retrieving artifact versions", e);
                 throw new AbortException(errorMessage);
             }
         }

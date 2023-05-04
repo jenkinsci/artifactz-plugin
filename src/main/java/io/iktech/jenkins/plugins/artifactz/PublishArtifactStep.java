@@ -10,6 +10,7 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import io.artifactz.client.ServiceClient;
 import io.artifactz.client.exception.ClientException;
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -194,13 +195,19 @@ public class PublishArtifactStep extends Step {
             TaskListener taskListener = getContext().get(TaskListener.class);
 
             PrintStream l = taskListener.getLogger();
-            l.println("Pushing artifact '" + this.name + "' at the stage '" + this.stage + "'");
-
-            String credentialsId = Configuration.get().getCredentialsId();
-            if (credentialsId == null) {
-                ServiceHelper.interruptExecution(run, taskListener, "Artifactz access credentials are not defined. Cannot continue.");
-                throw new AbortException("Artifactz access credentials are not defined. Cannot continue.");
+            l.println("Patching the artifact version details at the stage '" + this.stage + "' to the Artifactor instance @ " + Configuration.get().getServerUrl());
+            l.println("Artifact details:");
+            l.println("  name: " + this.name);
+            if (!StringUtils.isEmpty(this.description)) {
+                taskListener.getLogger().println("  description: " + this.description);
             }
+            if (!StringUtils.isEmpty(this.groupId)) {
+                taskListener.getLogger().println("  group Id: " + this.groupId);
+            }
+            if (!StringUtils.isEmpty(this.artifactId)) {
+                taskListener.getLogger().println("  artifact Id: " + this.artifactId);
+            }
+            taskListener.getLogger().println("  version: " + this.version);
 
             try {
                 ServiceClient client = ServiceHelper.getClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
@@ -209,7 +216,7 @@ public class PublishArtifactStep extends Step {
             } catch (ClientException e) {
                 logger.error("Error while publishing artifact", e);
                 String errorMessage = "Error while publishing artifact: " + e.getMessage();
-                ServiceHelper.interruptExecution(run, taskListener, errorMessage);
+                ServiceHelper.interruptExecution(run, taskListener, "Error while publishing artifact version", e);
                 throw new AbortException(errorMessage);
             }
 

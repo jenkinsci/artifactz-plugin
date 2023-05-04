@@ -116,7 +116,7 @@ public class PushArtifactVersionBuildStep extends Builder implements SimpleBuild
             run.addAction(new InjectVariable(variableName, pushedVersion));
             taskListener.getLogger().println("Successfully pushed artifact version");
         } catch (ClientException e) {
-            ServiceHelper.interruptExecution(run, taskListener, e.getMessage());
+            ServiceHelper.interruptExecution(run, taskListener, "Error while pushing artifact version", e);
             throw new AbortException(e.getMessage());
         }
     }

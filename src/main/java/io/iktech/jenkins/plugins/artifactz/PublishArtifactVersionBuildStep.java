@@ -186,7 +186,7 @@ public class PublishArtifactVersionBuildStep extends Builder implements SimpleBu
             client.publishArtifact(expandedStage, expandedStageDescription, expandedName, expandedDescription, this.getFlow(), this.getType(), expandedGroupId, expandedArtifactId, expandedVersion);
             taskListener.getLogger().println("Successfully patched artifact version");
         } catch (ClientException e) {
-            ServiceHelper.interruptExecution(run, taskListener, e.getMessage());
+            ServiceHelper.interruptExecution(run, taskListener, "Error while publishing artifact version", e);
             throw new AbortException(e.getMessage());
         }
     }

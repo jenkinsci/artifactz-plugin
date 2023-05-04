@@ -100,7 +100,7 @@ public class ArtifactVersionPublisherTest {
         System.out.println(build.getDisplayName() + " completed");
         // TODO: change this to use HtmlUnit
         String s = FileUtils.readFileToString(build.getLogFile());
-        assertThat(s, containsString("FATAL: Test error message"));
+        assertThat(s, containsString("FATAL: Error while publishing artifact version: Test error message"));
     }
 
     @Test

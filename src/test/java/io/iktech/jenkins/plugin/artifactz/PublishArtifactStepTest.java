@@ -120,6 +120,6 @@ public class PublishArtifactStepTest {
         WorkflowRun build = project.scheduleBuild2(0).get();
         System.out.println(build.getDisplayName() + " completed");
         String s = FileUtils.readFileToString(build.getLogFile());
-        assertThat(s, containsString("Error while publishing artifact: test exception"));
+        assertThat(s, containsString("FATAL: Error while publishing artifact version: test exception"));
     }
 }

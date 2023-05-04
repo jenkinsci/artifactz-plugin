@@ -40,6 +40,28 @@ public class ServiceHelper {
         }
     }
 
+    public static void interruptExecution(@Nonnull Run<?, ?> run, @Nonnull TaskListener taskListener, String prefix, Throwable e) {
+        boolean firstLine = true;
+
+
+        while (e != null) {
+            if (e.getMessage() != null) {
+                taskListener.fatalError((!firstLine ? "    " : (prefix != null ? prefix + ": " : "")) + e.getMessage());
+            }
+
+            if (firstLine) {
+                firstLine = false;
+            }
+
+            e = e.getCause();
+        }
+
+        Executor executor = run.getExecutor();
+        if (executor != null) {
+            executor.interrupt(Result.FAILURE);
+        }
+    }
+
     public static ServiceClient getClient(TaskListener taskListener, String token) throws ClientException {
         String proxyUsername = null;
         String proxyPassword = null;
