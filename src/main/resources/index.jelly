@@ -1,0 +1,4 @@
+<?jelly escape-by-default='true'?>
+<div>
+    This plugin allows to exchange artifact details between pipeline or freestyle project Artifactz.io Web Service
+</div>

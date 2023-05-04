@@ -12,7 +12,6 @@
     <artifactId>artifactz</artifactId>
     <version>${revision}-${changelist}</version>
     <name>Artifactz.io Plugin</name>
-    <description>This plugin allows to exchange artifact details between pipeline or freestyle project Artifactz.io Web Service</description>
     <url>https://github.com/jenkinsci/artifactz-plugin</url>
     <developers>
         <developer>
