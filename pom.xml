@@ -255,6 +255,9 @@
                         --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED
                     </argLine>
                     <forkCount>1</forkCount>
+                    <reuseForks>true</reuseForks>
+                    <threadCount>1</threadCount>
+                    <parallel>suites</parallel>
                     <shutdown>kill</shutdown>
                 </configuration>
             </plugin>
