@@ -40,9 +40,6 @@
 <!--        <java.level>11</java.level>-->
         <revision>1.2.0</revision>
         <changelist>999999-SNAPSHOT</changelist>
-        <connectorHost />
-        <jenkins.host.address />
-        <slaveAgentPort />
     </properties>
     <dependencies>
 <!--        <dependency>-->
@@ -253,15 +250,12 @@
                     <systemPropertyVariables>
                         <hudson.slaves.NodeProvisioner.initialDelay>0</hudson.slaves.NodeProvisioner.initialDelay>
                         <hudson.slaves.NodeProvisioner.recurrencePeriod>3000</hudson.slaves.NodeProvisioner.recurrencePeriod>
-                        <!-- listen in this interface for connections from kubernetes pods -->
-                        <connectorHost>${connectorHost}</connectorHost>
-                        <!-- have pods connect to this address for Jenkins -->
-                        <jenkins.host.address>${jenkins.host.address}</jenkins.host.address>
-                        <slaveAgentPort>${slaveAgentPort}</slaveAgentPort>
                     </systemPropertyVariables>
                     <argLine>
                         --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED
                     </argLine>
+                    <forkCount>1</forkCount>
+                    <shutdown>kill</shutdown>
                 </configuration>
             </plugin>
             <plugin>
