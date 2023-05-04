@@ -23,13 +23,26 @@ import java.util.stream.Collectors;
 
 public class RetrieveArtifactsStep extends Step {
     private static Logger logger = LoggerFactory.getLogger(RetrieveArtifactsStep.class);
+    private String token;
+
     private String stage;
+
     private List<String> names;
 
     @DataBoundConstructor
-    public RetrieveArtifactsStep(String stage, List<String> names) {
+    public RetrieveArtifactsStep(String token, String stage, List<String> names) {
+        this.token = token;
         this.stage = stage;
         this.names = names;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    @DataBoundSetter
+    public void setToken(String token) {
+        this.token = token;
     }
 
     public String getStage() {
@@ -52,17 +65,21 @@ public class RetrieveArtifactsStep extends Step {
 
     @Override
     public StepExecution start(StepContext context) throws Exception {
-        return new Execution(stage, names, context);
+        return new Execution(this.token, this.stage, this.names, context);
     }
 
     private static final class Execution extends SynchronousNonBlockingStepExecution<Map<String, String>> {
         private static final long serialVersionUID = 6190377462479580850L;
 
+        private final String token;
+
         private final String stage;
+
         private final List<String> names;
 
-        Execution(String stage, List<String> names, StepContext context) {
+        Execution(String token, String stage, List<String> names, StepContext context) {
             super(context);
+            this.token = token;
             this.stage = stage;
             this.names = names;
         }
@@ -75,20 +92,8 @@ public class RetrieveArtifactsStep extends Step {
             PrintStream l = taskListener.getLogger();
             l.println("Retrieving versions of the following artifacts at the stage '" + this.stage + "'");
 
-            String credentialsId = Configuration.get().getCredentialsId();
-            if (credentialsId == null) {
-                ServiceHelper.interruptExecution(run, taskListener, "Artifactz access credentials are not defined. Cannot continue.");
-                throw new AbortException("Artifactz access credentials are not defined. Cannot continue.");
-            }
-
-            StringCredentials token = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run);
-            if (token == null) {
-                ServiceHelper.interruptExecution(run, taskListener, "Could not find specified credentials. Cannot continue.");
-                throw new AbortException("Could not find specified credentials. Cannot continue.");
-            }
-
             try {
-                ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
+                ServiceClient client = ServiceHelper.getClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
                 io.artifactz.client.model.Stage stage = client.retrieveVersions(this.stage, this.names.toArray(new String[0]));
                 logger.info("Content has been converted to the object");
                 if (stage.getArtifacts() != null) {
@@ -102,7 +107,7 @@ public class RetrieveArtifactsStep extends Step {
             } catch (ClientException e) {
                 logger.error("Error while retrieving artifact versions", e);
                 String errorMessage = "Error while retrieving artifact versions: " + e.getMessage();
-                ServiceHelper.interruptExecution(run, taskListener, errorMessage);
+                ServiceHelper.interruptExecution(run, taskListener, "Error while retrieving artifact versions", e);
                 throw new AbortException(errorMessage);
             }
         }

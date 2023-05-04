@@ -3,6 +3,7 @@ package io.iktech.jenkins.plugins.artifactz;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import hudson.AbortException;
 import hudson.model.Executor;
 import hudson.model.Result;
 import hudson.model.Run;
@@ -19,6 +20,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
+import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 
 import javax.annotation.Nonnull;
 import java.net.MalformedURLException;
@@ -32,6 +34,28 @@ public class ServiceHelper {
 
     public static void interruptExecution(@Nonnull Run<?, ?> run, @Nonnull TaskListener taskListener, String message) {
         taskListener.fatalError(message);
+        Executor executor = run.getExecutor();
+        if (executor != null) {
+            executor.interrupt(Result.FAILURE);
+        }
+    }
+
+    public static void interruptExecution(@Nonnull Run<?, ?> run, @Nonnull TaskListener taskListener, String prefix, Throwable e) {
+        boolean firstLine = true;
+
+
+        while (e != null) {
+            if (e.getMessage() != null) {
+                taskListener.fatalError((!firstLine ? "    " : (prefix != null ? prefix + ": " : "")) + e.getMessage());
+            }
+
+            if (firstLine) {
+                firstLine = false;
+            }
+
+            e = e.getCause();
+        }
+
         Executor executor = run.getExecutor();
         if (executor != null) {
             executor.interrupt(Result.FAILURE);
@@ -103,5 +127,25 @@ public class ServiceHelper {
         }
 
         return proxyHttpHost;
+    }
+
+    public static String getToken(Run<?, ?> run, TaskListener taskListener, String inlineToken) throws AbortException {
+        if (inlineToken == null) {
+            String credentialsId = Configuration.get().getCredentialsId();
+            if (credentialsId == null) {
+                ServiceHelper.interruptExecution(run, taskListener, "Artifactz access credentials are not defined. Cannot continue.");
+                throw new AbortException("Artifactz access credentials are not defined. Cannot continue.");
+            }
+
+            StringCredentials token = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run);
+            if (token == null) {
+                ServiceHelper.interruptExecution(run, taskListener, "Could not find specified credentials. Cannot continue.");
+                throw new AbortException("Could not find specified credentials. Cannot continue.");
+            }
+
+            return token.getSecret().getPlainText();
+        }
+
+        return inlineToken;
     }
 }

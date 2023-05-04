@@ -47,7 +47,34 @@ public class PublishArtifactVersionBuildStepTest {
         configuration.setServerUrl("http://localhost:5002");
         configuration.doFillCredentialsIdItems(Jenkins.get(), null, "test");
         configuration.setCredentialsId("test");
-        PublishArtifactVersionBuildStep step = new PublishArtifactVersionBuildStep(null, null, null, null, null, null, null, null, null);
+        PublishArtifactVersionBuildStep step = new PublishArtifactVersionBuildStep(null, null, null, null, null, null, null, null, null, null);
+        step.setName("test-artifact");
+        step.setStage("Development");
+        step.setStageDescription("Development stage");
+        step.setDescription("Test Artifact");
+        step.setType("JAR");
+        step.setFlow("Default");
+        step.setGroupId("io.iktech.test");
+        step.setArtifactId("test.artifact");
+        step.setVersion("1.0.0");
+        project.getBuildersList().add(step);
+        FreeStyleBuild build = project.scheduleBuild2(0).get();
+        System.out.println(build.getDisplayName() + " completed");
+        // TODO: change this to use HtmlUnit
+        String s = FileUtils.readFileToString(build.getLogFile());
+        assertThat(s, containsString("Successfully patched artifact version"));
+    }
+
+    @Test
+    public void publishArtifactWithTokenSuccessTest() throws Exception {
+        TestHelper.setupClient();
+        FreeStyleProject project = j.createFreeStyleProject();
+        Configuration configuration = Configuration.get();
+        configuration.setServerUrl("http://localhost:5002");
+        configuration.doFillCredentialsIdItems(Jenkins.get(), null, "test");
+        configuration.setCredentialsId("test");
+        PublishArtifactVersionBuildStep step = new PublishArtifactVersionBuildStep(null, null, null, null, null, null, null, null, null, null);
+        step.setToken("94266b76-884a-408d-b725-7100ae9767f3");
         step.setName("test-artifact");
         step.setStage("Development");
         step.setStageDescription("Development stage");
@@ -73,7 +100,7 @@ public class PublishArtifactVersionBuildStepTest {
         configuration.setServerUrl("http://localhost:5002");
         configuration.doFillCredentialsIdItems(Jenkins.get(), null, "test");
         configuration.setCredentialsId("test");
-        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep("test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
+        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep(null, "test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
         publisher.setFlow("Default");
         publisher.setType("WAR");
         project.getBuildersList().add(publisher);
@@ -95,23 +122,23 @@ public class PublishArtifactVersionBuildStepTest {
         configuration.setServerUrl("http://localhost:5002");
         configuration.doFillCredentialsIdItems(Jenkins.get(), null, "test");
         configuration.setCredentialsId("test");
-        project.getBuildersList().add(new PublishArtifactVersionBuildStep("test-artifact", null, "JAR", "io.iktech.test", "test.artifact", "Development", null, null, "1.0.0"));
+        project.getBuildersList().add(new PublishArtifactVersionBuildStep(null, "test-artifact", null, "JAR", "io.iktech.test", "test.artifact", "Development", null, null, "1.0.0"));
         FreeStyleBuild build = project.scheduleBuild2(0).get();
         System.out.println(build.getDisplayName() + " completed");
         // TODO: change this to use HtmlUnit
         String s = FileUtils.readFileToString(build.getLogFile());
-        assertThat(s, containsString("FATAL: Test error message"));
+        assertThat(s, containsString("FATAL: Error while publishing artifact version: Test error message"));
     }
 
     @Test
     public void descriptorDisplayNameTest() throws Exception {
-        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep("test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
+        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep(null, "test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
         assertEquals("Send Artifact Version To Artifactor Web Service", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).getDisplayName());
     }
 
     @Test
     public void descriptorDoCheckNameTest() throws Exception {
-        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep("test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
+        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep(null, "test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
         assertEquals("OK", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckName("test").kind.name());
         assertEquals("ERROR", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckName("").kind.name());
         assertEquals("ERROR", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckName(null).kind.name());
@@ -120,7 +147,7 @@ public class PublishArtifactVersionBuildStepTest {
 
     @Test
     public void descriptorDoCheckStageTest() throws Exception {
-        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep("test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
+        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep(null, "test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
         assertEquals("OK", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckStage("test").kind.name());
         assertEquals("ERROR", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckStage("").kind.name());
         assertEquals("ERROR", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckStage(null).kind.name());
@@ -129,7 +156,7 @@ public class PublishArtifactVersionBuildStepTest {
 
     @Test
     public void descriptorDoCheckTypeTest() throws Exception {
-        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep("test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
+        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep(null, "test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
         assertEquals("OK", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckType("JAR").kind.name());
         assertEquals("ERROR", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckType("").kind.name());
         assertEquals("ERROR", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckType(null).kind.name());
@@ -138,7 +165,7 @@ public class PublishArtifactVersionBuildStepTest {
 
     @Test
     public void descriptorDoCheckGroupIdTest() throws Exception {
-        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep("test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
+        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep(null, "test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
         assertEquals("OK", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckGroupId("io.iktech", "JAR").kind.name());
         assertEquals("OK", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckGroupId("", "DockerImage").kind.name());
         assertEquals("ERROR", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckGroupId("", "JAR").kind.name());
@@ -148,7 +175,7 @@ public class PublishArtifactVersionBuildStepTest {
 
     @Test
     public void descriptorDoCheckArtifactIdTest() throws Exception {
-        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep("test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
+        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep(null, "test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
         assertEquals("OK", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckArtifactId("test", "JAR").kind.name());
         assertEquals("OK", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckArtifactId("", "DockerImage").kind.name());
         assertEquals("ERROR", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckArtifactId("", "JAR").kind.name());
@@ -158,7 +185,7 @@ public class PublishArtifactVersionBuildStepTest {
 
     @Test
     public void descriptorDoCheckVersionTest() throws Exception {
-        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep("test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
+        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep(null, "test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
         assertEquals("OK", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckVersion("1.0").kind.name());
         assertEquals("ERROR", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckVersion("").kind.name());
         assertEquals("ERROR", ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckVersion(null).kind.name());
@@ -167,7 +194,7 @@ public class PublishArtifactVersionBuildStepTest {
 
     @Test
     public void descriptorDoFillItemsTest() throws Exception {
-        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep("test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
+        PublishArtifactVersionBuildStep publisher = new PublishArtifactVersionBuildStep(null, "test-artifact", "Test Artifact", "JAR", "io.iktech.test", "test.artifact", "Development", "Defalt", "Development Stage", "1.0.0");
         ListBoxModel m = ((PublishArtifactVersionBuildStep.DescriptorImpl)publisher.getDescriptor()).doFillTypeItems(null);
         assertEquals(5, m.size());
         assertEquals("- none -", m.get(0).name);

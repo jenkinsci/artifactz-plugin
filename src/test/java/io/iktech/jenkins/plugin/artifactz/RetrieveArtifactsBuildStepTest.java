@@ -67,7 +67,44 @@ public class RetrieveArtifactsBuildStepTest {
         name.setName("test-artifact");
         names.add(name);
 
-        RetrieveArtifactsBuildStep step = new RetrieveArtifactsBuildStep(names, "Development", null);
+        RetrieveArtifactsBuildStep step = new RetrieveArtifactsBuildStep(null, names, "Development", null);
+        step.setVariableName("ARTIFACT_VERSIONS");
+
+        project.getBuildersList().add(step);
+        FreeStyleBuild build = project.scheduleBuild2(0).get();
+        System.out.println(build.getDisplayName() + " completed");
+        // TODO: change this to use HtmlUnit
+        String s = FileUtils.readFileToString(build.getLogFile());
+        assertThat(s, containsString("Successfully retrieved artifact versions"));
+        EnvVars vars = build.getEnvironment();
+        assertNotNull(vars);
+        assertEquals("{\"test-artifact\":\"1.0.0\"}", vars.get("ARTIFACT_VERSIONS"));
+    }
+
+    @Test
+    public void retrieveArtifactWithTokenSuccessTest() throws Exception {
+        ServiceClient client = TestHelper.setupClient();
+
+        List<Version> artifacts = new ArrayList<>();
+
+        Version version = new Version("test-artifact", "Test Artifact", "DockerImage", null, null, "1.0.0");
+        artifacts.add(version);
+
+        Stage stage = new Stage("Development", artifacts);
+
+        when(client.retrieveVersions(eq("Development"), eq("test-artifact"))).thenReturn(stage);
+        FreeStyleProject project = j.createFreeStyleProject();
+        Configuration configuration = Configuration.get();
+        configuration.setServerUrl("http://localhost:5002");
+        configuration.doFillCredentialsIdItems(Jenkins.get(), null, "test");
+        configuration.setCredentialsId("test");
+        List<Name> names = new ArrayList<>();
+        Name name = new Name();
+        name.setName("test-artifact");
+        names.add(name);
+
+        RetrieveArtifactsBuildStep step = new RetrieveArtifactsBuildStep(null, names, "Development", null);
+        step.setToken("508c8d0d-79c4-4bec-be70-8e47de3a2be5");
         step.setVariableName("ARTIFACT_VERSIONS");
 
         project.getBuildersList().add(step);
@@ -103,7 +140,7 @@ public class RetrieveArtifactsBuildStepTest {
         name.setName("test-artifact");
         names.add(name);
 
-        project.getBuildersList().add(new RetrieveArtifactsBuildStep(names, "Development", null));
+        project.getBuildersList().add(new RetrieveArtifactsBuildStep("test", names, "Development", null));
         FreeStyleBuild build = project.scheduleBuild2(0).get();
         System.out.println(build.getDisplayName() + " completed");
         // TODO: change this to use HtmlUnit
@@ -132,7 +169,7 @@ public class RetrieveArtifactsBuildStepTest {
         name.setName("test-artifact");
         names.add(name);
 
-        RetrieveArtifactsBuildStep step = new RetrieveArtifactsBuildStep(names, "Development", "ARTIFACT_VERSIONS");
+        RetrieveArtifactsBuildStep step = new RetrieveArtifactsBuildStep(null, names, "Development", "ARTIFACT_VERSIONS");
         step.setNames(names);
         step.setStage("Development");
         step.setVariableName("ARTIFACT_VERSIONS");
@@ -163,7 +200,7 @@ public class RetrieveArtifactsBuildStepTest {
         name.setName("test-artifact");
         names.add(name);
 
-        RetrieveArtifactsBuildStep step = new RetrieveArtifactsBuildStep(names, "Development", null);
+        RetrieveArtifactsBuildStep step = new RetrieveArtifactsBuildStep(null, names, "Development", null);
         step.setNames(names);
         step.setStage("Development");
 
@@ -182,7 +219,7 @@ public class RetrieveArtifactsBuildStepTest {
         name.setName("test-artifact");
         names.add(name);
 
-        RetrieveArtifactsBuildStep publisher = new RetrieveArtifactsBuildStep(names, "Development", null);
+        RetrieveArtifactsBuildStep publisher = new RetrieveArtifactsBuildStep(null, names, "Development", null);
         assertEquals("Retrieve Artifact version for stage", ((RetrieveArtifactsBuildStep.DescriptorImpl)publisher.getDescriptor()).getDisplayName());
     }
 
@@ -193,7 +230,7 @@ public class RetrieveArtifactsBuildStepTest {
         name.setName("test-artifact");
         names.add(name);
 
-        RetrieveArtifactsBuildStep publisher = new RetrieveArtifactsBuildStep(names, "Development", null);
+        RetrieveArtifactsBuildStep publisher = new RetrieveArtifactsBuildStep(null, names, "Development", null);
         assertEquals("OK", ((RetrieveArtifactsBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckNames(names).kind.name());
         assertEquals("ERROR", ((RetrieveArtifactsBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckNames(new ArrayList<>()).kind.name());
         assertEquals("ERROR", ((RetrieveArtifactsBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckNames(null).kind.name());
@@ -207,7 +244,7 @@ public class RetrieveArtifactsBuildStepTest {
         name.setName("test-artifact");
         names.add(name);
 
-        RetrieveArtifactsBuildStep publisher = new RetrieveArtifactsBuildStep(names, "Development", null);
+        RetrieveArtifactsBuildStep publisher = new RetrieveArtifactsBuildStep(null, names, "Development", null);
         assertEquals("OK", ((RetrieveArtifactsBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckStage("Development").kind.name());
         assertEquals("ERROR", ((RetrieveArtifactsBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckStage("").kind.name());
         assertEquals("ERROR", ((RetrieveArtifactsBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckStage(null).kind.name());

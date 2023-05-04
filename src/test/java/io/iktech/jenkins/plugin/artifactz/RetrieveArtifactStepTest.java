@@ -50,11 +50,13 @@ public class RetrieveArtifactStepTest {
 
     @Test
     public void gettersAndSettersTest() throws Exception {
-        RetrieveArtifactsStep test = new RetrieveArtifactsStep(null, null);
+        RetrieveArtifactsStep test = new RetrieveArtifactsStep(null, null, null);
+        test.setToken("25b311dd-4fde-4fd0-9aa7-8508cf59a969");
         test.setStage("Development");
         List<String> names = new ArrayList<>();
         names.add("test-artifact");
         test.setNames(names);
+        assertEquals("25b311dd-4fde-4fd0-9aa7-8508cf59a969", test.getToken());
         assertEquals("Development", test.getStage());
         assertNotNull(test.getNames());
         assertEquals(1, test.getNames().size());
@@ -78,6 +80,34 @@ public class RetrieveArtifactStepTest {
         project.setDefinition(new CpsFlowDefinition("" +
                 "node {" +
                 "  def result = retrieveArtifacts stage: 'Development', names: ['test-artifact']\n" +
+                "  def version = result['test-artifact']\n" +
+                "  echo \"Version: ${version}\"\n" +
+                "}", true));
+
+        WorkflowRun build = project.scheduleBuild2(0).get();
+        System.out.println(build.getDisplayName() + " completed");
+        String s = FileUtils.readFileToString(build.getLogFile());
+        assertThat(s, containsString("Successfully retrieved artifact versions"));
+        assertThat(s, containsString("Version: 1.0.0"));
+    }
+
+    @Test
+    public void retrieveArtifactWithTokenSuccessTest() throws Exception {
+        ServiceClient client = TestHelper.setupClient();
+
+        List<Version> artifacts = new ArrayList<>();
+
+        Version version = new Version("test-artifact", "Test Artifact", "DockerImage", null, null, "1.0.0");
+        artifacts.add(version);
+
+        Stage stage = new Stage("Development", artifacts);
+
+        when(client.retrieveVersions(eq("Development"), eq("test-artifact"))).thenReturn(stage);
+
+        WorkflowJob project = j.createProject(WorkflowJob.class);
+        project.setDefinition(new CpsFlowDefinition("" +
+                "node {" +
+                "  def result = retrieveArtifacts token: '2801c4ac-8a9f-4692-ad17-b820b56e7e3b', stage: 'Development', names: ['test-artifact']\n" +
                 "  def version = result['test-artifact']\n" +
                 "  echo \"Version: ${version}\"\n" +
                 "}", true));
