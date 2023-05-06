@@ -172,8 +172,6 @@
         <dependencies>
             <dependency>
                 <groupId>io.jenkins.tools.bom</groupId>
-<!--                <artifactId>bom-2.375.x</artifactId>-->
-<!--                <version>2025.v816d28f1e04f</version>-->
                 <artifactId>bom-2.361.x</artifactId>
                 <version>1836.vfe602c266c05</version>
                 <scope>import</scope>
@@ -194,18 +192,6 @@
                     <argLine>
                         --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED
                     </argLine>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.jenkins-ci.tools</groupId>
-                <artifactId>maven-hpi-plugin</artifactId>
-                <configuration>
-                    <systemProperties>
-                        <hudson.slaves.NodeProvisioner.initialDelay>0</hudson.slaves.NodeProvisioner.initialDelay>
-                        <hudson.slaves.NodeProvisioner.MARGIN>50</hudson.slaves.NodeProvisioner.MARGIN>
-                        <hudson.slaves.NodeProvisioner.MARGIN0>0.85</hudson.slaves.NodeProvisioner.MARGIN0>
-                    </systemProperties>
-                    <minimumJavaVersion>11</minimumJavaVersion>
                 </configuration>
             </plugin>
             <plugin>
