@@ -1,2 +1,0 @@
-_extends: .github
-tag-template: artiactz-plugin-$NEXT_MINOR_VERSION
