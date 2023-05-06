@@ -3,20 +3,16 @@ package io.iktech.jenkins.plugin.artifactz;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import io.artifactz.client.ServiceClient;
-import io.artifactz.client.ServiceClientBuilder;
 import io.artifactz.client.exception.ClientException;
-import io.iktech.jenkins.plugins.artifactz.Configuration;
 import io.iktech.jenkins.plugins.artifactz.ArtifactVersionPusher;
+import io.iktech.jenkins.plugins.artifactz.Configuration;
+import io.iktech.jenkins.plugins.artifactz.SingletonStore;
 import io.jenkins.cli.shaded.org.apache.commons.io.FileUtils;
 import jenkins.model.Jenkins;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
 
@@ -26,9 +22,6 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ ServiceClientBuilder.class})
-@PowerMockIgnore({"org.apache.http.conn.ssl.*", "javax.net.ssl.*" , "javax.crypto.*" })
 public class ArtifactVersionPusherTest {
     @Rule
     public JenkinsRule j = new JenkinsRule();
@@ -48,7 +41,6 @@ public class ArtifactVersionPusherTest {
 //
     @Test
     public void pushArtifactSuccessTest() throws Exception {
-        TestHelper.setupClient();
         FreeStyleProject project = j.createFreeStyleProject();
         Configuration configuration = Configuration.get();
         configuration.setServerUrl("http://localhost:5002");
@@ -72,8 +64,7 @@ public class ArtifactVersionPusherTest {
 
     @Test
     public void pushArtifactSuccessFailureTest() throws Exception {
-        ServiceClient serviceClient = TestHelper.setupClient();
-
+        ServiceClient serviceClient = ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
         doThrow(new ClientException("Test error message")).when(serviceClient).pushArtifact(any(), any(), any());
 
         FreeStyleProject project = j.createFreeStyleProject();
@@ -83,7 +74,8 @@ public class ArtifactVersionPusherTest {
         configuration.setCredentialsId("test");
         configuration.setProxy("http://proxy.iktech.io:3128");
         configuration.setProxyCredentialsId("proxy-test");
-        project.getBuildersList().add(new ArtifactVersionPusher("test-artifact", "Development", "1.0.0", null));
+        ArtifactVersionPusher step = new ArtifactVersionPusher("test-artifact", "Development", "1.0.0", null);
+        project.getBuildersList().add(step);
         FreeStyleBuild build = project.scheduleBuild2(0).get();
         System.out.println(build.getDisplayName() + " completed");
         // TODO: change this to use HtmlUnit
@@ -113,5 +105,9 @@ public class ArtifactVersionPusherTest {
         assertEquals("ERROR", ((ArtifactVersionPusher.DescriptorImpl)publisher.getDescriptor()).doCheckStage("").kind.name());
         assertEquals("ERROR", ((ArtifactVersionPusher.DescriptorImpl)publisher.getDescriptor()).doCheckStage(null).kind.name());
         assertEquals("Please set the deployment stage", ((ArtifactVersionPusher.DescriptorImpl)publisher.getDescriptor()).doCheckStage("").getMessage());
+    }
+
+    static {
+        SingletonStore.test(new TestServiceClientFactory());
     }
 }

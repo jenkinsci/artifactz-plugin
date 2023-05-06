@@ -2,6 +2,8 @@ package io.iktech.jenkins.plugins.artifactz;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import hudson.*;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
@@ -11,6 +13,8 @@ import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import io.artifactz.client.ServiceClient;
 import io.artifactz.client.exception.ClientException;
+import io.iktech.jenkins.plugins.artifactz.client.ServiceClientFactory;
+import io.iktech.jenkins.plugins.artifactz.modules.ServiceClientFactoryModule;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.annotation.Obsolete;
@@ -21,6 +25,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import javax.servlet.ServletException;
 import java.io.IOException;
 
@@ -33,6 +38,8 @@ public class ArtifactVersionPusher extends Builder implements SimpleBuildStep {
     private String version;
     private String variableName;
 
+    private transient ServiceClientFactory serviceClientFactory;
+
     @DataBoundConstructor
     public ArtifactVersionPusher(String name,
                                  String stage,
@@ -42,6 +49,7 @@ public class ArtifactVersionPusher extends Builder implements SimpleBuildStep {
         this.stage = stage;
         this.version = version;
         this.variableName = variableName;
+        this.serviceClientFactory = SingletonStore.getInstance();
     }
 
     public String getName() {
@@ -105,7 +113,7 @@ public class ArtifactVersionPusher extends Builder implements SimpleBuildStep {
         }
 
         try {
-            ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
+            ServiceClient client = this.serviceClientFactory.serviceClient(taskListener, token.getSecret().getPlainText());
             String pushedVersion;
             if (!StringUtils.isEmpty(expandedVersion)) {
                 pushedVersion = client.pushArtifact(expandedStage, expandedName, expandedVersion);

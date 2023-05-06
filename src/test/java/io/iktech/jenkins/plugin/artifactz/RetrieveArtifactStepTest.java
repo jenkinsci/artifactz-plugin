@@ -1,12 +1,12 @@
 package io.iktech.jenkins.plugin.artifactz;
 
 import io.artifactz.client.ServiceClient;
-import io.artifactz.client.ServiceClientBuilder;
 import io.artifactz.client.exception.ClientException;
 import io.artifactz.client.model.Stage;
 import io.artifactz.client.model.Version;
 import io.iktech.jenkins.plugins.artifactz.Configuration;
 import io.iktech.jenkins.plugins.artifactz.RetrieveArtifactsStep;
+import io.iktech.jenkins.plugins.artifactz.SingletonStore;
 import io.jenkins.cli.shaded.org.apache.commons.io.FileUtils;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
@@ -15,11 +15,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,9 +28,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ ServiceClientBuilder.class})
-@PowerMockIgnore({"org.apache.http.conn.ssl.*", "javax.net.ssl.*" , "javax.crypto.*" })
 public class RetrieveArtifactStepTest {
     @Rule
     public JenkinsRule j = new JenkinsRule();
@@ -65,8 +58,6 @@ public class RetrieveArtifactStepTest {
 
     @Test
     public void retrieveArtifactSuccessTest() throws Exception {
-        ServiceClient client = TestHelper.setupClient();
-
         List<Version> artifacts = new ArrayList<>();
 
         Version version = new Version("test-artifact", "Test Artifact", "DockerImage", null, null, "1.0.0");
@@ -74,6 +65,7 @@ public class RetrieveArtifactStepTest {
 
         Stage stage = new Stage("Development", artifacts);
 
+        ServiceClient client = ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
         when(client.retrieveVersions(eq("Development"), eq("test-artifact"))).thenReturn(stage);
 
         WorkflowJob project = j.createProject(WorkflowJob.class);
@@ -93,8 +85,6 @@ public class RetrieveArtifactStepTest {
 
     @Test
     public void retrieveArtifactWithTokenSuccessTest() throws Exception {
-        ServiceClient client = TestHelper.setupClient();
-
         List<Version> artifacts = new ArrayList<>();
 
         Version version = new Version("test-artifact", "Test Artifact", "DockerImage", null, null, "1.0.0");
@@ -102,6 +92,7 @@ public class RetrieveArtifactStepTest {
 
         Stage stage = new Stage("Development", artifacts);
 
+        ServiceClient client = ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
         when(client.retrieveVersions(eq("Development"), eq("test-artifact"))).thenReturn(stage);
 
         WorkflowJob project = j.createProject(WorkflowJob.class);
@@ -121,11 +112,10 @@ public class RetrieveArtifactStepTest {
 
     @Test
     public void retrieveArtifactSuccessEmptyDataSetTest() throws Exception {
-        ServiceClient client = TestHelper.setupClient();
-
         Stage stage = new Stage();
         stage.setStage("Development");
 
+        ServiceClient client = ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
         when(client.retrieveVersions(eq("Development"), eq("test-artifact"))).thenReturn(stage);
 
         WorkflowJob project = j.createProject(WorkflowJob.class);
@@ -144,11 +134,10 @@ public class RetrieveArtifactStepTest {
 
     @Test
     public void retrieveArtifactFailureTest() throws Exception {
-        ServiceClient client = TestHelper.setupClient();
-
         Stage stage = new Stage();
         stage.setStage("Development");
 
+        ServiceClient client = ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
         when(client.retrieveVersions(eq("Development"), eq("test-artifact"))).thenThrow(new ClientException("test exception"));
 
         WorkflowJob project = j.createProject(WorkflowJob.class);
@@ -163,5 +152,9 @@ public class RetrieveArtifactStepTest {
         System.out.println(build.getDisplayName() + " completed");
         String s = FileUtils.readFileToString(build.getLogFile());
         assertThat(s, containsString("Error while retrieving artifact versions: test exception"));
+    }
+
+    static {
+        SingletonStore.test(new TestServiceClientFactory());
     }
 }

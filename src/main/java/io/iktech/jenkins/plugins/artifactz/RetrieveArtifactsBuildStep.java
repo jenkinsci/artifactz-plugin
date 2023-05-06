@@ -2,6 +2,8 @@ package io.iktech.jenkins.plugins.artifactz;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import hudson.*;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
@@ -13,6 +15,8 @@ import io.artifactz.client.ServiceClient;
 import io.artifactz.client.exception.ClientException;
 import io.artifactz.client.model.Stage;
 import io.artifactz.client.model.Version;
+import io.iktech.jenkins.plugins.artifactz.client.ServiceClientFactory;
+import io.iktech.jenkins.plugins.artifactz.modules.ServiceClientFactoryModule;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
@@ -23,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -31,8 +36,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class RetrieveArtifactsBuildStep extends Builder implements SimpleBuildStep {
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-    private static Logger logger = LoggerFactory.getLogger(RetrieveArtifactsBuildStep.class);
+    private final transient ObjectMapper objectMapper;
+    private static final Logger logger = LoggerFactory.getLogger(RetrieveArtifactsBuildStep.class);
 
     private String token;
 
@@ -41,6 +46,8 @@ public class RetrieveArtifactsBuildStep extends Builder implements SimpleBuildSt
     private String stage;
 
     private String variableName;
+
+    private transient ServiceClientFactory serviceClientFactory;
 
     @DataBoundConstructor
     public RetrieveArtifactsBuildStep(String token,
@@ -52,6 +59,8 @@ public class RetrieveArtifactsBuildStep extends Builder implements SimpleBuildSt
         this.names = names;
         this.stage  = stage;
         this.variableName = variableName;
+        this.objectMapper =  new ObjectMapper();
+        this.serviceClientFactory = SingletonStore.getInstance();
     }
 
     public String getToken() {
@@ -97,7 +106,7 @@ public class RetrieveArtifactsBuildStep extends Builder implements SimpleBuildSt
         l.println("Retrieving versions of the following artifacts at the stage '" + this.stage + "'");
 
         try {
-            ServiceClient client = ServiceHelper.getClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
+            ServiceClient client = this.serviceClientFactory.serviceClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
             List<String> artifacts = new ArrayList<>();
             for (Name name : this.getNames()) {
                 artifacts.add(name.getName());

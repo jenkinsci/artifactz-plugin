@@ -2,6 +2,8 @@ package io.iktech.jenkins.plugins.artifactz;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import hudson.*;
 import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
@@ -10,6 +12,8 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import io.artifactz.client.ServiceClient;
 import io.artifactz.client.exception.ClientException;
+import io.iktech.jenkins.plugins.artifactz.client.ServiceClientFactory;
+import io.iktech.jenkins.plugins.artifactz.modules.ServiceClientFactoryModule;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.annotation.Obsolete;
@@ -21,6 +25,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import javax.servlet.ServletException;
 import java.io.IOException;
 
@@ -35,6 +40,8 @@ public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep
     private String flow;
     private String stageDescription;
     private String version;
+
+    private transient ServiceClientFactory serviceClientFactory;
 
     @DataBoundConstructor
     public ArtifactVersionPublisher(String name,
@@ -55,6 +62,7 @@ public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep
         this.flow = flow;
         this.stageDescription = stageDescription;
         this.version = version;
+        this.serviceClientFactory = SingletonStore.getInstance();
     }
 
     public String getName() {
@@ -174,7 +182,7 @@ public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep
         }
 
         try {
-            ServiceClient client = ServiceHelper.getClient(taskListener, token.getSecret().getPlainText());
+            ServiceClient client = this.serviceClientFactory.serviceClient(taskListener, token.getSecret().getPlainText());
             client.publishArtifact(expandedStage, expandedStageDescription, expandedName, expandedDescription, this.getFlow(), this.getType(), expandedGroupId, expandedArtifactId, expandedVersion);
             taskListener.getLogger().println("Successfully patched artifact version");
         } catch (ClientException e) {

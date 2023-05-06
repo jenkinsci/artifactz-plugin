@@ -1,7 +1,8 @@
 package io.iktech.jenkins.plugins.artifactz;
 
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.google.common.collect.ImmutableSet;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
@@ -10,14 +11,16 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import io.artifactz.client.ServiceClient;
 import io.artifactz.client.exception.ClientException;
+import io.iktech.jenkins.plugins.artifactz.client.ServiceClientFactory;
+import io.iktech.jenkins.plugins.artifactz.modules.ServiceClientFactoryModule;
 import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.io.PrintStream;
 import java.util.Set;
 
@@ -44,6 +47,8 @@ public class PublishArtifactStep extends Step {
 
     private String version;
 
+    private transient ServiceClientFactory serviceClientFactory;
+
     @DataBoundConstructor
     public PublishArtifactStep(String token, String name, String description, String type, String flow, String stage, String stageDescription, String groupId, String artifactId, String version) {
         this.token = token;
@@ -56,6 +61,7 @@ public class PublishArtifactStep extends Step {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;
+        this.serviceClientFactory = SingletonStore.getInstance();
     }
 
     public String getToken() {
@@ -150,7 +156,7 @@ public class PublishArtifactStep extends Step {
 
     @Override
     public StepExecution start(StepContext context) throws Exception {
-        return new PublishArtifactStep.Execution(this.token, this.name, this.description, this.type, this.flow, this.stage, this.stageDescription, this.groupId, this.artifactId, this.version, context);
+        return new PublishArtifactStep.Execution(this.token, this.name, this.description, this.type, this.flow, this.stage, this.stageDescription, this.groupId, this.artifactId, this.version, context, this.serviceClientFactory);
     }
 
     private static final class Execution extends SynchronousNonBlockingStepExecution<Boolean> {
@@ -176,7 +182,9 @@ public class PublishArtifactStep extends Step {
 
         private final String version;
 
-        Execution(String token, String name, String description, String type, String flow, String stage, String stageDescription, String groupId, String artifactId, String version, StepContext context) {
+        private final transient ServiceClientFactory serviceClientFactory;
+
+        Execution(String token, String name, String description, String type, String flow, String stage, String stageDescription, String groupId, String artifactId, String version, StepContext context, ServiceClientFactory serviceClientFactory) {
             super(context);
             this.token = token;
             this.name = name;
@@ -188,6 +196,7 @@ public class PublishArtifactStep extends Step {
             this.groupId = groupId;
             this.artifactId = artifactId;
             this.version = version;
+            this.serviceClientFactory = serviceClientFactory;
         }
 
         @Override protected Boolean run() throws Exception {
@@ -210,7 +219,7 @@ public class PublishArtifactStep extends Step {
             taskListener.getLogger().println("  version: " + this.version);
 
             try {
-                ServiceClient client = ServiceHelper.getClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
+                ServiceClient client = this.serviceClientFactory.serviceClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
                 client.publishArtifact(this.stage, this.stageDescription, this.name, this.description, this.flow, this.type, this.groupId, this.artifactId, this.version);
                 taskListener.getLogger().println("Successfully published artifact");
             } catch (ClientException e) {

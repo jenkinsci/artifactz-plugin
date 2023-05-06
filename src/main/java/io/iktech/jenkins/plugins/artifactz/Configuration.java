@@ -5,6 +5,8 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.ItemGroup;
@@ -13,6 +15,9 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import io.artifactz.client.ServiceClient;
 import io.artifactz.client.exception.ClientException;
+import io.iktech.jenkins.plugins.artifactz.client.ServiceClientFactory;
+import io.iktech.jenkins.plugins.artifactz.client.impl.ServiceClientFactoryImpl;
+import io.iktech.jenkins.plugins.artifactz.modules.ServiceClientFactoryModule;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
@@ -23,6 +28,7 @@ import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 
 import javax.annotation.CheckForNull;
+import javax.inject.Inject;
 import java.util.Collections;
 
 @Extension
@@ -45,8 +51,11 @@ public class Configuration extends GlobalConfiguration {
 
     private String proxyCredentialsId;
 
+    private transient ServiceClientFactory serviceClientFactory;
+
     public Configuration() {
         load();
+        this.serviceClientFactory = SingletonStore.getInstance();
     }
 
     @CheckForNull
@@ -136,7 +145,7 @@ public class Configuration extends GlobalConfiguration {
                 ), CredentialsMatchers.withId(credentialsId));
         if (credentials != null && credentials.getSecret() != null) {
             try {
-                ServiceClient client = ServiceHelper.getClient(credentials.getSecret().getPlainText());
+                ServiceClient client = this.serviceClientFactory.serviceClient(null, credentials.getSecret().getPlainText());
                 client.validateConnection();
                 return FormValidation.ok("Connection test successful");
             } catch (ClientException e) {

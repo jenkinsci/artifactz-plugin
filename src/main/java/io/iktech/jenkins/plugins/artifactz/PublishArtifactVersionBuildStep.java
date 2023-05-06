@@ -1,7 +1,8 @@
 package io.iktech.jenkins.plugins.artifactz;
 
-import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import hudson.*;
 import hudson.model.*;
 import hudson.tasks.BuildStepDescriptor;
@@ -10,16 +11,18 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import io.artifactz.client.ServiceClient;
 import io.artifactz.client.exception.ClientException;
+import io.iktech.jenkins.plugins.artifactz.client.ServiceClientFactory;
+import io.iktech.jenkins.plugins.artifactz.modules.ServiceClientFactoryModule;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
-import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import javax.servlet.ServletException;
 import java.io.IOException;
 
@@ -44,6 +47,8 @@ public class PublishArtifactVersionBuildStep extends Builder implements SimpleBu
 
     private String version;
 
+    private transient ServiceClientFactory serviceClientFactory;
+
     @DataBoundConstructor
     public PublishArtifactVersionBuildStep(String token,
                                            String name,
@@ -65,6 +70,7 @@ public class PublishArtifactVersionBuildStep extends Builder implements SimpleBu
         this.flow = flow;
         this.stageDescription = stageDescription;
         this.version = version;
+        this.serviceClientFactory = SingletonStore.getInstance();
     }
 
     public String getToken() {
@@ -182,7 +188,7 @@ public class PublishArtifactVersionBuildStep extends Builder implements SimpleBu
         taskListener.getLogger().println("  version: " + expandedVersion);
 
         try {
-            ServiceClient client = ServiceHelper.getClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
+            ServiceClient client = this.serviceClientFactory.serviceClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
             client.publishArtifact(expandedStage, expandedStageDescription, expandedName, expandedDescription, this.getFlow(), this.getType(), expandedGroupId, expandedArtifactId, expandedVersion);
             taskListener.getLogger().println("Successfully patched artifact version");
         } catch (ClientException e) {
