@@ -1,6 +1,9 @@
 package io.iktech.jenkins.plugins.artifactz;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import hudson.*;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
@@ -10,6 +13,8 @@ import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import io.artifactz.client.ServiceClient;
 import io.artifactz.client.exception.ClientException;
+import io.iktech.jenkins.plugins.artifactz.client.ServiceClientFactory;
+import io.iktech.jenkins.plugins.artifactz.modules.ServiceClientFactoryModule;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
@@ -19,6 +24,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import javax.servlet.ServletException;
 import java.io.IOException;
 
@@ -33,6 +39,8 @@ public class PushArtifactVersionBuildStep extends Builder implements SimpleBuild
 
     private String variableName;
 
+    private transient ServiceClientFactory serviceClientFactory;
+
     @DataBoundConstructor
     public PushArtifactVersionBuildStep(String token,
                                         String name,
@@ -44,6 +52,7 @@ public class PushArtifactVersionBuildStep extends Builder implements SimpleBuild
         this.stage = stage;
         this.version = version;
         this.variableName = variableName;
+        this.serviceClientFactory = SingletonStore.getInstance();
     }
 
     public String getToken() {
@@ -105,7 +114,7 @@ public class PushArtifactVersionBuildStep extends Builder implements SimpleBuild
         taskListener.getLogger().println("  version: " + expandedVersion);
 
         try {
-            ServiceClient client = ServiceHelper.getClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
+            ServiceClient client = this.serviceClientFactory.serviceClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
             String pushedVersion;
             if (!StringUtils.isEmpty(expandedVersion)) {
                 pushedVersion = client.pushArtifact(expandedStage, expandedName, expandedVersion);

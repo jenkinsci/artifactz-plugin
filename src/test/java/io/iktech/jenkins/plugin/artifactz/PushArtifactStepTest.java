@@ -1,12 +1,17 @@
 package io.iktech.jenkins.plugin.artifactz;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import groovy.lang.Singleton;
 import io.artifactz.client.ServiceClient;
-import io.artifactz.client.ServiceClientBuilder;
 import io.artifactz.client.exception.ClientException;
 import io.artifactz.client.model.Stage;
 import io.artifactz.client.model.Version;
 import io.iktech.jenkins.plugins.artifactz.Configuration;
 import io.iktech.jenkins.plugins.artifactz.PushArtifactStep;
+import io.iktech.jenkins.plugins.artifactz.SingletonStore;
+import io.iktech.jenkins.plugins.artifactz.client.ServiceClientFactory;
+import io.iktech.jenkins.plugins.artifactz.client.impl.ServiceClientFactoryImpl;
 import io.jenkins.cli.shaded.org.apache.commons.io.FileUtils;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
@@ -15,11 +20,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,9 +33,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ ServiceClientBuilder.class})
-@PowerMockIgnore({"org.apache.http.conn.ssl.*", "javax.net.ssl.*" , "javax.crypto.*" })
 public class PushArtifactStepTest {
     @Rule
     public JenkinsRule j = new JenkinsRule();
@@ -63,11 +61,7 @@ public class PushArtifactStepTest {
 
     @Test
     public void pushArtifactSuccessTest() throws Exception {
-        ServiceClient client = TestHelper.setupClient();
-
         List<Version> artifacts = new ArrayList<>();
-
-        when(client.pushArtifact(eq("Development"), eq("test-artifact"), any())).thenReturn("1.0.0");
 
         WorkflowJob project = j.createProject(WorkflowJob.class);
         project.setDefinition(new CpsFlowDefinition("" +
@@ -75,6 +69,9 @@ public class PushArtifactStepTest {
                 "  def version = pushArtifact stage: 'Development', name: 'test-artifact'\n" +
                 "  echo \"Version: ${version}\"\n" +
                 "}", true));
+
+        ServiceClient client = ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
+        when(client.pushArtifact(eq("Development"), eq("test-artifact"), any())).thenReturn("1.0.0");
 
         WorkflowRun build = project.scheduleBuild2(0).get();
         System.out.println(build.getDisplayName() + " completed");
@@ -85,10 +82,9 @@ public class PushArtifactStepTest {
 
     @Test
     public void pushArtifactWithTokenSuccessTest() throws Exception {
-        ServiceClient client = TestHelper.setupClient();
-
         List<Version> artifacts = new ArrayList<>();
 
+        ServiceClient client = ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
         when(client.pushArtifact(eq("Development"), eq("test-artifact"), any())).thenReturn("1.0.0");
 
         WorkflowJob project = j.createProject(WorkflowJob.class);
@@ -106,11 +102,10 @@ public class PushArtifactStepTest {
     }
     @Test
     public void retrieveArtifactFailureTest() throws Exception {
-        ServiceClient client = TestHelper.setupClient();
-
         Stage stage = new Stage();
         stage.setStage("Development");
 
+        ServiceClient client = ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
         when(client.pushArtifact(eq("Development"), eq("test-artifact"), any())).thenThrow(new ClientException("test exception"));
 
         WorkflowJob project = j.createProject(WorkflowJob.class);
@@ -124,5 +119,9 @@ public class PushArtifactStepTest {
         System.out.println(build.getDisplayName() + " completed");
         String s = FileUtils.readFileToString(build.getLogFile());
         assertThat(s, containsString("Error while pushing artifact version: test exception"));
+    }
+
+    static {
+        SingletonStore.test(new TestServiceClientFactory());
     }
 }

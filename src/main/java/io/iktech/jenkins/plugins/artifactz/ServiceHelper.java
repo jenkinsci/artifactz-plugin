@@ -28,10 +28,6 @@ import java.net.URL;
 import java.util.Collections;
 
 public class ServiceHelper {
-    public static ServiceClient getClient(String token) throws ClientException {
-        return getClient(null, token);
-    }
-
     public static void interruptExecution(@Nonnull Run<?, ?> run, @Nonnull TaskListener taskListener, String message) {
         taskListener.fatalError(message);
         Executor executor = run.getExecutor();
@@ -60,29 +56,6 @@ public class ServiceHelper {
         if (executor != null) {
             executor.interrupt(Result.FAILURE);
         }
-    }
-
-    public static ServiceClient getClient(TaskListener taskListener, String token) throws ClientException {
-        String proxyUsername = null;
-        String proxyPassword = null;
-
-        StandardUsernamePasswordCredentials proxyCredentials = getProxyCredentials();
-        if (proxyCredentials != null) {
-            proxyUsername = proxyCredentials.getUsername();
-            proxyPassword = proxyCredentials.getPassword().getPlainText();
-        }
-
-        ServiceClientBuilder builder = ServiceClientBuilder
-                .withBaseUrl(Configuration.get().getServerUrl())
-                .withApiToken(token)
-                .withUserAgent("Jenkins Artifactz.io plugin/1.0")
-                .withSender("jenkins-plugin")
-                .withProxyUrl(Configuration.get().getProxy())
-                .withProxyUsername(proxyUsername)
-                .withProxyPassword(proxyPassword)
-                .provideFeedback(taskListener != null ? new FeedbackImpl(taskListener) : null);
-
-        return builder.build();
     }
 
     public static StandardUsernamePasswordCredentials getProxyCredentials() {

@@ -4,23 +4,19 @@ import hudson.EnvVars;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import io.artifactz.client.ServiceClient;
-import io.artifactz.client.ServiceClientBuilder;
 import io.artifactz.client.exception.ClientException;
 import io.artifactz.client.model.Stage;
 import io.artifactz.client.model.Version;
 import io.iktech.jenkins.plugins.artifactz.Configuration;
 import io.iktech.jenkins.plugins.artifactz.Name;
 import io.iktech.jenkins.plugins.artifactz.RetrieveArtifactsBuildStep;
+import io.iktech.jenkins.plugins.artifactz.SingletonStore;
 import io.jenkins.cli.shaded.org.apache.commons.io.FileUtils;
 import jenkins.model.Jenkins;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,9 +29,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ ServiceClientBuilder.class})
-@PowerMockIgnore({"org.apache.http.conn.ssl.*", "javax.net.ssl.*" , "javax.crypto.*" })
 public class RetrieveArtifactsBuildStepTest {
     @Rule
     public JenkinsRule j = new JenkinsRule();
@@ -47,8 +40,6 @@ public class RetrieveArtifactsBuildStepTest {
 
     @Test
     public void retrieveArtifactSuccessTest() throws Exception {
-        ServiceClient client = TestHelper.setupClient();
-
         List<Version> artifacts = new ArrayList<>();
 
         Version version = new Version("test-artifact", "Test Artifact", "DockerImage", null, null, "1.0.0");
@@ -56,7 +47,9 @@ public class RetrieveArtifactsBuildStepTest {
 
         Stage stage = new Stage("Development", artifacts);
 
+        ServiceClient client = ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
         when(client.retrieveVersions(eq("Development"), eq("test-artifact"))).thenReturn(stage);
+
         FreeStyleProject project = j.createFreeStyleProject();
         Configuration configuration = Configuration.get();
         configuration.setServerUrl("http://localhost:5002");
@@ -83,8 +76,6 @@ public class RetrieveArtifactsBuildStepTest {
 
     @Test
     public void retrieveArtifactWithTokenSuccessTest() throws Exception {
-        ServiceClient client = TestHelper.setupClient();
-
         List<Version> artifacts = new ArrayList<>();
 
         Version version = new Version("test-artifact", "Test Artifact", "DockerImage", null, null, "1.0.0");
@@ -92,7 +83,9 @@ public class RetrieveArtifactsBuildStepTest {
 
         Stage stage = new Stage("Development", artifacts);
 
+        ServiceClient client = ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
         when(client.retrieveVersions(eq("Development"), eq("test-artifact"))).thenReturn(stage);
+
         FreeStyleProject project = j.createFreeStyleProject();
         Configuration configuration = Configuration.get();
         configuration.setServerUrl("http://localhost:5002");
@@ -120,8 +113,6 @@ public class RetrieveArtifactsBuildStepTest {
 
     @Test
     public void retrieveArtifactSuccessDefaultVariableTest() throws Exception {
-        ServiceClient client = TestHelper.setupClient();
-
         List<Version> artifacts = new ArrayList<>();
 
         Version version = new Version("test-artifact", "Test Artifact", "DockerImage", null, null, "1.0.0");
@@ -129,7 +120,9 @@ public class RetrieveArtifactsBuildStepTest {
 
         Stage stage = new Stage("Development", artifacts);
 
+        ServiceClient client = ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
         when(client.retrieveVersions(eq("Development"), eq("test-artifact"))).thenReturn(stage);
+
         FreeStyleProject project = j.createFreeStyleProject();
         Configuration configuration = Configuration.get();
         configuration.setServerUrl("http://localhost:5002");
@@ -140,7 +133,9 @@ public class RetrieveArtifactsBuildStepTest {
         name.setName("test-artifact");
         names.add(name);
 
-        project.getBuildersList().add(new RetrieveArtifactsBuildStep("test", names, "Development", null));
+
+        RetrieveArtifactsBuildStep step = new RetrieveArtifactsBuildStep("test", names, "Development", null);
+        project.getBuildersList().add(step);
         FreeStyleBuild build = project.scheduleBuild2(0).get();
         System.out.println(build.getDisplayName() + " completed");
         // TODO: change this to use HtmlUnit
@@ -153,12 +148,12 @@ public class RetrieveArtifactsBuildStepTest {
 
     @Test
     public void retrieveArtifactEmptyDataSetTest() throws Exception {
-        ServiceClient client = TestHelper.setupClient();
-
         Stage stage = new Stage();
         stage.setStage("Development");
 
+        ServiceClient client = ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
         when(client.retrieveVersions(eq("Development"), eq("test-artifact"))).thenReturn(stage);
+
         FreeStyleProject project = j.createFreeStyleProject();
         Configuration configuration = Configuration.get();
         configuration.setServerUrl("http://localhost:5002");
@@ -184,12 +179,13 @@ public class RetrieveArtifactsBuildStepTest {
 
     @Test
     public void retrieveArtifactFailureTest() throws Exception {
-        ServiceClient client = TestHelper.setupClient();
 
         Stage stage = new Stage();
         stage.setStage("Development");
 
+        ServiceClient client = ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
         when(client.retrieveVersions(eq("Development"), eq("test-artifact"))).thenThrow(new ClientException("test exception"));
+
         FreeStyleProject project = j.createFreeStyleProject();
         Configuration configuration = Configuration.get();
         configuration.setServerUrl("http://localhost:5002");
@@ -249,5 +245,9 @@ public class RetrieveArtifactsBuildStepTest {
         assertEquals("ERROR", ((RetrieveArtifactsBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckStage("").kind.name());
         assertEquals("ERROR", ((RetrieveArtifactsBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckStage(null).kind.name());
         assertEquals("Please set the deployment stage", ((RetrieveArtifactsBuildStep.DescriptorImpl)publisher.getDescriptor()).doCheckStage("").getMessage());
+    }
+
+    static {
+        SingletonStore.test(new TestServiceClientFactory());
     }
 }

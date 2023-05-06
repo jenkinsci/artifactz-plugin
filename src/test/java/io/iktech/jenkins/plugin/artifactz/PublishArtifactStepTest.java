@@ -1,11 +1,11 @@
 package io.iktech.jenkins.plugin.artifactz;
 
 import io.artifactz.client.ServiceClient;
-import io.artifactz.client.ServiceClientBuilder;
 import io.artifactz.client.exception.ClientException;
 import io.artifactz.client.model.Stage;
 import io.iktech.jenkins.plugins.artifactz.Configuration;
 import io.iktech.jenkins.plugins.artifactz.PublishArtifactStep;
+import io.iktech.jenkins.plugins.artifactz.SingletonStore;
 import io.jenkins.cli.shaded.org.apache.commons.io.FileUtils;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
@@ -14,11 +14,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
 
@@ -29,9 +25,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ ServiceClientBuilder.class})
-@PowerMockIgnore({"org.apache.http.conn.ssl.*", "javax.net.ssl.*" , "javax.crypto.*" })
 public class PublishArtifactStepTest {
     @Rule
     public JenkinsRule j = new JenkinsRule();
@@ -72,8 +65,6 @@ public class PublishArtifactStepTest {
 
     @Test
     public void publishArtifactSuccessTest() throws Exception {
-        TestHelper.setupClient();
-
         WorkflowJob project = j.createProject(WorkflowJob.class);
         project.setDefinition(new CpsFlowDefinition("" +
                 "node {" +
@@ -88,8 +79,6 @@ public class PublishArtifactStepTest {
 
     @Test
     public void publishArtifactWithTokensSuccessTest() throws Exception {
-        TestHelper.setupClient();
-
         WorkflowJob project = j.createProject(WorkflowJob.class);
         project.setDefinition(new CpsFlowDefinition("" +
                 "node {" +
@@ -104,7 +93,7 @@ public class PublishArtifactStepTest {
 
     @Test
     public void publishArtifactFailureTest() throws Exception {
-        ServiceClient client = TestHelper.setupClient();
+        ServiceClient client = ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
 
         Stage stage = new Stage();
         stage.setStage("Development");
@@ -121,5 +110,9 @@ public class PublishArtifactStepTest {
         System.out.println(build.getDisplayName() + " completed");
         String s = FileUtils.readFileToString(build.getLogFile());
         assertThat(s, containsString("FATAL: Error while publishing artifact version: test exception"));
+    }
+
+    static {
+        SingletonStore.test(new TestServiceClientFactory());
     }
 }

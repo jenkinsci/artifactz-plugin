@@ -4,20 +4,16 @@ import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
 import hudson.util.ListBoxModel;
 import io.artifactz.client.ServiceClient;
-import io.artifactz.client.ServiceClientBuilder;
 import io.artifactz.client.exception.ClientException;
 import io.iktech.jenkins.plugins.artifactz.Configuration;
 import io.iktech.jenkins.plugins.artifactz.PublishArtifactVersionBuildStep;
+import io.iktech.jenkins.plugins.artifactz.SingletonStore;
 import io.jenkins.cli.shaded.org.apache.commons.io.FileUtils;
 import jenkins.model.Jenkins;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
 
@@ -27,9 +23,6 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ ServiceClientBuilder.class})
-@PowerMockIgnore({"org.apache.http.conn.ssl.*", "javax.net.ssl.*" , "javax.crypto.*" })
 public class PublishArtifactVersionBuildStepTest {
     @Rule
     public JenkinsRule j = new JenkinsRule();
@@ -41,7 +34,9 @@ public class PublishArtifactVersionBuildStepTest {
 
     @Test
     public void publishArtifactSuccessTest() throws Exception {
-        TestHelper.setupClient();
+        // Reset mock factory
+        ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
+
         FreeStyleProject project = j.createFreeStyleProject();
         Configuration configuration = Configuration.get();
         configuration.setServerUrl("http://localhost:5002");
@@ -67,7 +62,9 @@ public class PublishArtifactVersionBuildStepTest {
 
     @Test
     public void publishArtifactWithTokenSuccessTest() throws Exception {
-        TestHelper.setupClient();
+        // Reset mock factory
+        ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
+
         FreeStyleProject project = j.createFreeStyleProject();
         Configuration configuration = Configuration.get();
         configuration.setServerUrl("http://localhost:5002");
@@ -94,7 +91,9 @@ public class PublishArtifactVersionBuildStepTest {
 
     @Test
     public void publishArtifactSuccessTestAllFields() throws Exception {
-        TestHelper.setupClient();
+        // Reset mock factory
+        ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
+
         FreeStyleProject project = j.createFreeStyleProject();
         Configuration configuration = Configuration.get();
         configuration.setServerUrl("http://localhost:5002");
@@ -113,16 +112,16 @@ public class PublishArtifactVersionBuildStepTest {
 
     @Test
     public void publishArtifactNotSuccessTest() throws Exception {
-        ServiceClient serviceClient = TestHelper.setupClient();
-
-        doThrow(new ClientException("Test error message")).when(serviceClient).publishArtifact(any(), any(), any(), any(), any(), any(), any(), any(), any());
+        ServiceClient client = ((TestServiceClientFactory)SingletonStore.getInstance()).getServiceClient();
+        doThrow(new ClientException("Test error message")).when(client).publishArtifact(any(), any(), any(), any(), any(), any(), any(), any(), any());
 
         FreeStyleProject project = j.createFreeStyleProject();
         Configuration configuration = Configuration.get();
         configuration.setServerUrl("http://localhost:5002");
         configuration.doFillCredentialsIdItems(Jenkins.get(), null, "test");
         configuration.setCredentialsId("test");
-        project.getBuildersList().add(new PublishArtifactVersionBuildStep(null, "test-artifact", null, "JAR", "io.iktech.test", "test.artifact", "Development", null, null, "1.0.0"));
+        PublishArtifactVersionBuildStep step = new PublishArtifactVersionBuildStep(null, "test-artifact", null, "JAR", "io.iktech.test", "test.artifact", "Development", null, null, "1.0.0");
+        project.getBuildersList().add(step);
         FreeStyleBuild build = project.scheduleBuild2(0).get();
         System.out.println(build.getDisplayName() + " completed");
         // TODO: change this to use HtmlUnit
@@ -207,5 +206,9 @@ public class PublishArtifactVersionBuildStepTest {
         assertEquals("EAR", m.get(3).value);
         assertEquals("Docker Image", m.get(4).name);
         assertEquals("DockerImage", m.get(4).value);
+    }
+
+    static {
+        SingletonStore.test(new TestServiceClientFactory());
     }
 }

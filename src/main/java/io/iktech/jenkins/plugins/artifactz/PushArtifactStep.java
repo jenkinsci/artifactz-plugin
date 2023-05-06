@@ -2,6 +2,8 @@ package io.iktech.jenkins.plugins.artifactz;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.google.common.collect.ImmutableSet;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
@@ -10,6 +12,8 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import io.artifactz.client.ServiceClient;
 import io.artifactz.client.exception.ClientException;
+import io.iktech.jenkins.plugins.artifactz.client.ServiceClientFactory;
+import io.iktech.jenkins.plugins.artifactz.modules.ServiceClientFactoryModule;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -17,6 +21,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
 import java.io.PrintStream;
 import java.util.Set;
 
@@ -30,12 +35,15 @@ public class PushArtifactStep extends Step {
 
     private String version;
 
+    private transient ServiceClientFactory serviceClientFactory;
+
     @DataBoundConstructor
     public PushArtifactStep(String token, String stage, String name, String version, String variable) {
         this.token = token;
         this.stage = stage;
         this.name = name;
         this.version = version;
+        this.serviceClientFactory = SingletonStore.getInstance();
     }
 
     public String getToken() {
@@ -76,7 +84,7 @@ public class PushArtifactStep extends Step {
 
     @Override
     public StepExecution start(StepContext context) throws Exception {
-        return new PushArtifactStep.Execution(this.token, this.stage, this.name, this.version, context);
+        return new PushArtifactStep.Execution(this.token, this.stage, this.name, this.version, context, this.serviceClientFactory);
     }
 
     private static final class Execution extends SynchronousNonBlockingStepExecution<String> {
@@ -90,12 +98,15 @@ public class PushArtifactStep extends Step {
 
         private final String version;
 
-        Execution(String token, String stage, String name, String version, StepContext context) {
+        private final transient ServiceClientFactory serviceClientFactory;
+
+        Execution(String token, String stage, String name, String version, StepContext context, ServiceClientFactory serviceClientFactory) {
             super(context);
             this.token = token;
             this.stage = stage;
             this.name = name;
             this.version = version;
+            this.serviceClientFactory = serviceClientFactory;
         }
 
         @Override protected String run() throws Exception {
@@ -111,7 +122,7 @@ public class PushArtifactStep extends Step {
             l.println("  version: " + this.version);
 
             try {
-                ServiceClient client = ServiceHelper.getClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
+                ServiceClient client = this.serviceClientFactory.serviceClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
                 String v = client.pushArtifact(this.stage, this.name, this.version);
                 taskListener.getLogger().println("Successfully pushed artifact versions");
                 return v;
