@@ -93,15 +93,6 @@ public class ArtifactVersionPusher extends Builder implements SimpleBuildStep {
         String expandedName = env.expand(this.getName());
         String expandedVersion = env.expand(this.getVersion());
 
-        taskListener.getLogger().println("Pushing the artifact version '" + expandedVersion + "' at the stage '" + expandedStage + "'");
-        taskListener.getLogger().println("Performing PUT request to  to the Artifactor instance @" + Configuration.get().getServerUrl());
-        taskListener.getLogger().println("Artifact details:");
-        taskListener.getLogger().println("  name: " + expandedName);
-        taskListener.getLogger().println("  stage: " + expandedStage);
-        if (!StringUtils.isEmpty(expandedVersion)) {
-            taskListener.getLogger().println("  version: " + expandedVersion);
-        }
-
         String credentialsId = Configuration.get().getCredentialsId();
         if (credentialsId == null) {
             ServiceHelper.interruptExecution(run, taskListener, "Artifactz access credentials are not defined. Cannot continue.");
@@ -124,7 +115,6 @@ public class ArtifactVersionPusher extends Builder implements SimpleBuildStep {
             }
             String variableName = !StringUtils.isEmpty(this.getVariableName()) ? this.getVariableName() : "ARTIFACTZ_VERSION";
             run.addAction(new InjectVariable(variableName, pushedVersion));
-            taskListener.getLogger().println("Successfully pushed artifact version");
         } catch (ClientException e) {
             ServiceHelper.interruptExecution(run, taskListener, "Error while pushing artifact version", e);
             throw new AbortException(e.getMessage());

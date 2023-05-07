@@ -173,24 +173,10 @@ public class PublishArtifactVersionBuildStep extends Builder implements SimpleBu
         String expandedGroupId = env.expand(this.getGroupId());
         String expandedArtifactId = env.expand(this.getArtifactId());
         String expandedVersion = env.expand(this.getVersion());
-        taskListener.getLogger().println("Patching the artifact version details at the stage '" + expandedStage + "' to the Artifactor instance @ " + Configuration.get().getServerUrl());
-        taskListener.getLogger().println("Artifact details:");
-        taskListener.getLogger().println("  name: " + expandedName);
-        if (!StringUtils.isEmpty(expandedDescription)) {
-            taskListener.getLogger().println("  description: " + expandedDescription);
-        }
-        if (!StringUtils.isEmpty(expandedGroupId)) {
-            taskListener.getLogger().println("  group Id: " + expandedGroupId);
-        }
-        if (!StringUtils.isEmpty(expandedArtifactId)) {
-            taskListener.getLogger().println("  artifact Id: " + expandedArtifactId);
-        }
-        taskListener.getLogger().println("  version: " + expandedVersion);
 
         try {
             ServiceClient client = this.serviceClientFactory.serviceClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
             client.publishArtifact(expandedStage, expandedStageDescription, expandedName, expandedDescription, this.getFlow(), this.getType(), expandedGroupId, expandedArtifactId, expandedVersion);
-            taskListener.getLogger().println("Successfully patched artifact version");
         } catch (ClientException e) {
             ServiceHelper.interruptExecution(run, taskListener, "Error while publishing artifact version", e);
             throw new AbortException(e.getMessage());

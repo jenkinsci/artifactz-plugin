@@ -62,7 +62,7 @@ public class PushArtifactVersionBuildStepTest {
         System.out.println(build.getDisplayName() + " completed");
         // TODO: change this to use HtmlUnit
         String s = FileUtils.readFileToString(build.getLogFile());
-        assertThat(s, containsString("Successfully pushed artifact version"));
+        assertThat(s, containsString("Finished: SUCCESS"));
     }
     @Test
     public void pushArtifactWithTokenSuccessTest() throws Exception {
@@ -88,7 +88,7 @@ public class PushArtifactVersionBuildStepTest {
         System.out.println(build.getDisplayName() + " completed");
         // TODO: change this to use HtmlUnit
         String s = FileUtils.readFileToString(build.getLogFile());
-        assertThat(s, containsString("Successfully pushed artifact version"));
+        assertThat(s, containsString("Finished: SUCCESS"));
     }
 
     @Test

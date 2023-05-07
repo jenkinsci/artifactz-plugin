@@ -74,7 +74,7 @@ public class PublishArtifactStepTest {
         WorkflowRun build = project.scheduleBuild2(0).get();
         System.out.println(build.getDisplayName() + " completed");
         String s = FileUtils.readFileToString(build.getLogFile());
-        assertThat(s, containsString("Successfully published artifact"));
+        assertThat(s, containsString("Finished: SUCCESS"));
     }
 
     @Test
@@ -88,7 +88,7 @@ public class PublishArtifactStepTest {
         WorkflowRun build = project.scheduleBuild2(0).get();
         System.out.println(build.getDisplayName() + " completed");
         String s = FileUtils.readFileToString(build.getLogFile());
-        assertThat(s, containsString("Successfully published artifact"));
+        assertThat(s, containsString("Finished: SUCCESS"));
     }
 
     @Test

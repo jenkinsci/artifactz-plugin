@@ -203,25 +203,9 @@ public class PublishArtifactStep extends Step {
             Run<?, ?> run = getContext().get(Run.class);
             TaskListener taskListener = getContext().get(TaskListener.class);
 
-            PrintStream l = taskListener.getLogger();
-            l.println("Patching the artifact version details at the stage '" + this.stage + "' to the Artifactor instance @ " + Configuration.get().getServerUrl());
-            l.println("Artifact details:");
-            l.println("  name: " + this.name);
-            if (!StringUtils.isEmpty(this.description)) {
-                taskListener.getLogger().println("  description: " + this.description);
-            }
-            if (!StringUtils.isEmpty(this.groupId)) {
-                taskListener.getLogger().println("  group Id: " + this.groupId);
-            }
-            if (!StringUtils.isEmpty(this.artifactId)) {
-                taskListener.getLogger().println("  artifact Id: " + this.artifactId);
-            }
-            taskListener.getLogger().println("  version: " + this.version);
-
             try {
                 ServiceClient client = this.serviceClientFactory.serviceClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
                 client.publishArtifact(this.stage, this.stageDescription, this.name, this.description, this.flow, this.type, this.groupId, this.artifactId, this.version);
-                taskListener.getLogger().println("Successfully published artifact");
             } catch (ClientException e) {
                 logger.error("Error while publishing artifact", e);
                 String errorMessage = "Error while publishing artifact: " + e.getMessage();

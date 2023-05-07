@@ -106,15 +106,6 @@ public class PushArtifactVersionBuildStep extends Builder implements SimpleBuild
         String expandedName = env.expand(this.getName());
         String expandedVersion = env.expand(this.getVersion());
 
-        taskListener.getLogger().println("Pushing the artifact version '" + expandedVersion + "' at the stage '" + expandedStage + "'");
-        taskListener.getLogger().println("Performing PUT request to  to the Artifactor instance @" + Configuration.get().getServerUrl());
-        taskListener.getLogger().println("Artifact details:");
-        taskListener.getLogger().println("  name: " + expandedName);
-        taskListener.getLogger().println("  stage: " + expandedStage);
-        if (!StringUtils.isEmpty(expandedVersion)) {
-            taskListener.getLogger().println("  version: " + expandedVersion);
-        }
-
         try {
             ServiceClient client = this.serviceClientFactory.serviceClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
             String pushedVersion;
@@ -125,7 +116,6 @@ public class PushArtifactVersionBuildStep extends Builder implements SimpleBuild
             }
             String variableName = !StringUtils.isEmpty(this.getVariableName()) ? this.getVariableName() : "ARTIFACTZ_VERSION";
             run.addAction(new InjectVariable(variableName, pushedVersion));
-            taskListener.getLogger().println("Successfully pushed artifact version");
         } catch (ClientException e) {
             ServiceHelper.interruptExecution(run, taskListener, "Error while pushing artifact version", e);
             throw new AbortException(e.getMessage());

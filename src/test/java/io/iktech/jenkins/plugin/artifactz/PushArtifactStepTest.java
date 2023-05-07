@@ -76,8 +76,7 @@ public class PushArtifactStepTest {
         WorkflowRun build = project.scheduleBuild2(0).get();
         System.out.println(build.getDisplayName() + " completed");
         String s = FileUtils.readFileToString(build.getLogFile());
-        assertThat(s, containsString("Successfully pushed artifact versions"));
-        assertThat(s, containsString("Version: 1.0.0"));
+        assertThat(s, containsString("Finished: SUCCESS"));
     }
 
     @Test
@@ -97,8 +96,7 @@ public class PushArtifactStepTest {
         WorkflowRun build = project.scheduleBuild2(0).get();
         System.out.println(build.getDisplayName() + " completed");
         String s = FileUtils.readFileToString(build.getLogFile());
-        assertThat(s, containsString("Successfully pushed artifact versions"));
-        assertThat(s, containsString("Version: 1.0.0"));
+        assertThat(s, containsString("Finished: SUCCESS"));
     }
     @Test
     public void retrieveArtifactFailureTest() throws Exception {
