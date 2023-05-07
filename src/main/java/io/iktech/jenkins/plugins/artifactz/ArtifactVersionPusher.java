@@ -98,7 +98,9 @@ public class ArtifactVersionPusher extends Builder implements SimpleBuildStep {
         taskListener.getLogger().println("Artifact details:");
         taskListener.getLogger().println("  name: " + expandedName);
         taskListener.getLogger().println("  stage: " + expandedStage);
-        taskListener.getLogger().println("  version: " + expandedVersion);
+        if (!StringUtils.isEmpty(expandedVersion)) {
+            taskListener.getLogger().println("  version: " + expandedVersion);
+        }
 
         String credentialsId = Configuration.get().getCredentialsId();
         if (credentialsId == null) {

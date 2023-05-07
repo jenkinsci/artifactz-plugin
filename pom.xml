@@ -37,6 +37,11 @@
     </properties>
     <dependencies>
         <dependency>
+            <groupId>io.iktech</groupId>
+            <artifactId>artifactz-client</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>credentials</artifactId>
         </dependency>
@@ -151,11 +156,6 @@
             <artifactId>slf4j-jdk14</artifactId>
             <version>2.0.7</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.iktech</groupId>
-            <artifactId>artifactz-client</artifactId>
-            <version>1.1.5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
