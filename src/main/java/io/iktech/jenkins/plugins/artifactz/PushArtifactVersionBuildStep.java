@@ -111,7 +111,9 @@ public class PushArtifactVersionBuildStep extends Builder implements SimpleBuild
         taskListener.getLogger().println("Artifact details:");
         taskListener.getLogger().println("  name: " + expandedName);
         taskListener.getLogger().println("  stage: " + expandedStage);
-        taskListener.getLogger().println("  version: " + expandedVersion);
+        if (!StringUtils.isEmpty(expandedVersion)) {
+            taskListener.getLogger().println("  version: " + expandedVersion);
+        }
 
         try {
             ServiceClient client = this.serviceClientFactory.serviceClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));

@@ -14,6 +14,7 @@ import io.artifactz.client.ServiceClient;
 import io.artifactz.client.exception.ClientException;
 import io.iktech.jenkins.plugins.artifactz.client.ServiceClientFactory;
 import io.iktech.jenkins.plugins.artifactz.modules.ServiceClientFactoryModule;
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -119,7 +120,9 @@ public class PushArtifactStep extends Step {
             l.println("Artifact details:");
             l.println("  name: " + this.name);
             l.println("  stage: " + this.stage);
-            l.println("  version: " + this.version);
+            if (!StringUtils.isEmpty(this.version)) {
+                l.println("  version: " + this.version);
+            }
 
             try {
                 ServiceClient client = this.serviceClientFactory.serviceClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
