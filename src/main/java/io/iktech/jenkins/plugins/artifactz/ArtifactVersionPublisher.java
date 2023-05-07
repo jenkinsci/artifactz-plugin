@@ -156,19 +156,7 @@ public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep
         String expandedGroupId = env.expand(this.getGroupId());
         String expandedArtifactId = env.expand(this.getArtifactId());
         String expandedVersion = env.expand(this.getVersion());
-        taskListener.getLogger().println("Patching the artifact version details at the stage '" + expandedStage + "' to the Artifactor instance @ " + Configuration.get().getServerUrl());
-        taskListener.getLogger().println("Artifact details:");
-        taskListener.getLogger().println("  name: " + expandedName);
-        if (!StringUtils.isEmpty(expandedDescription)) {
-            taskListener.getLogger().println("  description: " + expandedDescription);
-        }
-        if (!StringUtils.isEmpty(expandedGroupId)) {
-            taskListener.getLogger().println("  group Id: " + expandedGroupId);
-        }
-        if (!StringUtils.isEmpty(expandedArtifactId)) {
-            taskListener.getLogger().println("  artifact Id: " + expandedArtifactId);
-        }
-        taskListener.getLogger().println("  version: " + expandedVersion);
+
         String credentialsId = Configuration.get().getCredentialsId();
         if (credentialsId == null) {
             ServiceHelper.interruptExecution(run, taskListener, "Artifactz access credentials are not defined. Cannot continue.");
@@ -184,7 +172,6 @@ public class ArtifactVersionPublisher extends Builder implements SimpleBuildStep
         try {
             ServiceClient client = this.serviceClientFactory.serviceClient(taskListener, token.getSecret().getPlainText());
             client.publishArtifact(expandedStage, expandedStageDescription, expandedName, expandedDescription, this.getFlow(), this.getType(), expandedGroupId, expandedArtifactId, expandedVersion);
-            taskListener.getLogger().println("Successfully patched artifact version");
         } catch (ClientException e) {
             ServiceHelper.interruptExecution(run, taskListener, "Error while publishing artifact version", e);
             throw new AbortException(e.getMessage());

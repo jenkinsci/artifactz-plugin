@@ -61,7 +61,7 @@ public class ArtifactVersionPublisherTest {
         System.out.println(build.getDisplayName() + " completed");
         // TODO: change this to use HtmlUnit
         String s = FileUtils.readFileToString(build.getLogFile());
-        assertThat(s, containsString("Successfully patched artifact version"));
+        assertThat(s, containsString("Finished: SUCCESS"));
     }
 
     @Test
@@ -82,7 +82,7 @@ public class ArtifactVersionPublisherTest {
         System.out.println(build.getDisplayName() + " completed");
         // TODO: change this to use HtmlUnit
         String s = FileUtils.readFileToString(build.getLogFile());
-        assertThat(s, containsString("Successfully patched artifact version"));
+        assertThat(s, containsString("Finished: SUCCESS"));
     }
 
     @Test

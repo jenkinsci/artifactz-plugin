@@ -114,21 +114,9 @@ public class PushArtifactStep extends Step {
             Run<?, ?> run = getContext().get(Run.class);
             TaskListener taskListener = getContext().get(TaskListener.class);
 
-            PrintStream l = taskListener.getLogger();
-            l.println("Pushing the artifact version '" + this.name + ":" + this.version + "' at the stage '" + this.stage + "'");
-            l.println("Performing PUT request to  to the Artifactor instance @" + Configuration.get().getServerUrl());
-            l.println("Artifact details:");
-            l.println("  name: " + this.name);
-            l.println("  stage: " + this.stage);
-            if (!StringUtils.isEmpty(this.version)) {
-                l.println("  version: " + this.version);
-            }
-
             try {
                 ServiceClient client = this.serviceClientFactory.serviceClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
-                String v = client.pushArtifact(this.stage, this.name, this.version);
-                taskListener.getLogger().println("Successfully pushed artifact versions");
-                return v;
+                return client.pushArtifact(this.stage, this.name, this.version);
             } catch (ClientException e) {
                 logger.error("Error while pushing artifact version", e);
                 String errorMessage = "Error while pushing artifact version: " + e.getMessage();
