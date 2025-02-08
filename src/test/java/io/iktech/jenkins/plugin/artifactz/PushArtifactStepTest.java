@@ -3,6 +3,7 @@ package io.iktech.jenkins.plugin.artifactz;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import groovy.lang.Singleton;
+import hudson.model.Descriptor;
 import io.artifactz.client.ServiceClient;
 import io.artifactz.client.exception.ClientException;
 import io.artifactz.client.model.Stage;

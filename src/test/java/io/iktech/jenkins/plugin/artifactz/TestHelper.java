@@ -4,6 +4,7 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl;
+import hudson.model.Descriptor;
 import hudson.util.Secret;
 import io.artifactz.client.ServiceClient;
 import io.artifactz.client.ServiceClientBuilder;
@@ -21,8 +22,11 @@ public class TestHelper {
     public static void addCredential(JenkinsRule j, String description) throws IOException {
         StringCredentialsImpl c = new StringCredentialsImpl(CredentialsScope.USER, "test", description, Secret.fromString("value"));
         CredentialsProvider.lookupStores(j).iterator().next().addCredentials(Domain.global(), c);
-        UsernamePasswordCredentialsImpl up = new UsernamePasswordCredentialsImpl(CredentialsScope.USER, "proxy-test", "proxy" + description, "user",  "value");
-        CredentialsProvider.lookupStores(j).iterator().next().addCredentials(Domain.global(), up);
+        try {
+            UsernamePasswordCredentialsImpl up = new UsernamePasswordCredentialsImpl(CredentialsScope.USER, "proxy-test", "proxy" + description, "user", "value");
+            CredentialsProvider.lookupStores(j).iterator().next().addCredentials(Domain.global(), up);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
-
 }
