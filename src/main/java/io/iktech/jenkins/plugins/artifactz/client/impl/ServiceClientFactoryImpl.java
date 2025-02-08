@@ -24,7 +24,7 @@ public class ServiceClientFactoryImpl implements ServiceClientFactory {
         }
 
         ServiceClientBuilder builder = new ServiceClientBuilder(Configuration.get().getServerUrl(), token)
-                .withUserAgent("Jenkins Artifactz.io plugin/1.0")
+                .withUserAgent("Jenkins Artifactz.io plugin/1.3")
                 .withSender("jenkins-plugin")
                 .withProxyUrl(Configuration.get().getProxy())
                 .withProxyUsername(proxyUsername)
