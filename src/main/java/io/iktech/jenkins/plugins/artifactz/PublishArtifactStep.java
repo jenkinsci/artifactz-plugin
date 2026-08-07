@@ -13,7 +13,6 @@ import io.artifactz.client.ServiceClient;
 import io.artifactz.client.exception.ClientException;
 import io.iktech.jenkins.plugins.artifactz.client.ServiceClientFactory;
 import io.iktech.jenkins.plugins.artifactz.modules.ServiceClientFactoryModule;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;

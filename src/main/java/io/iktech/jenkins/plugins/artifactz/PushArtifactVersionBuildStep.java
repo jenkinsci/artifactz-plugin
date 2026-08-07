@@ -16,7 +16,6 @@ import io.artifactz.client.exception.ClientException;
 import io.iktech.jenkins.plugins.artifactz.client.ServiceClientFactory;
 import io.iktech.jenkins.plugins.artifactz.modules.ServiceClientFactoryModule;
 import jenkins.tasks.SimpleBuildStep;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -27,6 +26,7 @@ import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.servlet.ServletException;
 import java.io.IOException;
+import hudson.Util;
 
 public class PushArtifactVersionBuildStep extends Builder implements SimpleBuildStep {
     private String token;
@@ -109,12 +109,12 @@ public class PushArtifactVersionBuildStep extends Builder implements SimpleBuild
         try {
             ServiceClient client = this.serviceClientFactory.serviceClient(taskListener, ServiceHelper.getToken(run, taskListener, this.token));
             String pushedVersion;
-            if (!StringUtils.isEmpty(expandedVersion)) {
+            if (Util.fixEmpty(expandedVersion) != null) {
                 pushedVersion = client.pushArtifact(expandedStage, expandedName, expandedVersion);
             } else {
                 pushedVersion = client.pushArtifact(expandedStage, expandedName);
             }
-            String variableName = !StringUtils.isEmpty(this.getVariableName()) ? this.getVariableName() : "ARTIFACTZ_VERSION";
+            String variableName = Util.fixEmpty(this.getVariableName()) != null ? this.getVariableName() : "ARTIFACTZ_VERSION";
             run.addAction(new InjectVariable(variableName, pushedVersion));
         } catch (ClientException e) {
             ServiceHelper.interruptExecution(run, taskListener, "Error while pushing artifact version", e);

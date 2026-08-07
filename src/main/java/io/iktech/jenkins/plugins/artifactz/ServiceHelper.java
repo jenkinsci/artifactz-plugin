@@ -13,7 +13,6 @@ import io.artifactz.client.ServiceClient;
 import io.artifactz.client.ServiceClientBuilder;
 import io.artifactz.client.exception.ClientException;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -26,6 +25,7 @@ import javax.annotation.Nonnull;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collections;
+import hudson.Util;
 
 public class ServiceHelper {
     public static void interruptExecution(@Nonnull Run<?, ?> run, @Nonnull TaskListener taskListener, String message) {
@@ -59,7 +59,7 @@ public class ServiceHelper {
     }
 
     public static StandardUsernamePasswordCredentials getProxyCredentials() {
-        if (!StringUtils.isEmpty(Configuration.get().getProxyCredentialsId())) {
+        if (Util.fixEmpty(Configuration.get().getProxyCredentialsId()) != null) {
             return CredentialsMatchers.firstOrNull(
                     CredentialsProvider.lookupCredentials(
                             StandardUsernamePasswordCredentials.class,
@@ -80,7 +80,7 @@ public class ServiceHelper {
 
         HttpClientBuilder clientbuilder = HttpClients.custom();
 
-        if (!StringUtils.isEmpty(Configuration.get().getProxy())) {
+        if (Util.fixEmpty(Configuration.get().getProxy()) != null) {
             URL proxyUri = new URL(Configuration.get().getProxy());
             proxySchema = proxyUri.getProtocol();
             proxyHost = proxyUri.getHost();

@@ -18,7 +18,6 @@ import io.artifactz.client.model.Version;
 import io.iktech.jenkins.plugins.artifactz.client.ServiceClientFactory;
 import io.iktech.jenkins.plugins.artifactz.modules.ServiceClientFactoryModule;
 import jenkins.tasks.SimpleBuildStep;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -34,6 +33,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import hudson.Util;
 
 public class RetrieveArtifactsBuildStep extends Builder implements SimpleBuildStep {
     private final transient ObjectMapper objectMapper;
@@ -127,7 +127,7 @@ public class RetrieveArtifactsBuildStep extends Builder implements SimpleBuildSt
             }
             envVars.put("_response", content);
 
-            String variableName = !StringUtils.isEmpty(this.getVariableName()) ? this.getVariableName() : "ARTIFACTZ_VERSION_DATA";
+            String variableName = Util.fixEmpty(this.getVariableName()) != null ? this.getVariableName() : "ARTIFACTZ_VERSION_DATA";
             run.addAction(new InjectVariable(variableName, content));
             l.println("Successfully retrieved artifact versions");
         } catch (ClientException e) {

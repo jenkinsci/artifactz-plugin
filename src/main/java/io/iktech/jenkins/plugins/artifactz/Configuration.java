@@ -20,7 +20,6 @@ import io.iktech.jenkins.plugins.artifactz.client.impl.ServiceClientFactoryImpl;
 import io.iktech.jenkins.plugins.artifactz.modules.ServiceClientFactoryModule;
 import jenkins.model.GlobalConfiguration;
 import jenkins.model.Jenkins;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -111,14 +110,14 @@ public class Configuration extends GlobalConfiguration {
     }
 
     public FormValidation doCheckCredentialsId(@QueryParameter String value) {
-        if (StringUtils.isEmpty(value)) {
+        if (Util.fixEmpty(value) == null) {
             return FormValidation.warning("Please select Artifactor Service credentials.");
         }
         return FormValidation.ok();
     }
 
     public FormValidation doCheckServerUrl(@QueryParameter String value) {
-        if (StringUtils.isEmpty(value)) {
+        if (Util.fixEmpty(value) == null) {
             return FormValidation.warning("Please specify an Artifactor Service URL.");
         }
         return FormValidation.ok();
@@ -132,7 +131,7 @@ public class Configuration extends GlobalConfiguration {
                                            @QueryParameter String proxyCredentialsId) throws Exception {
         Jenkins.get().checkPermission(Jenkins.ADMINISTER);
 
-        if (StringUtils.isBlank(serverUrl)) {
+        if (Util.fixEmptyAndTrim(serverUrl) == null) {
             return FormValidation.error("name is required");
         }
 
