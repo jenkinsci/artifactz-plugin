@@ -14,7 +14,6 @@ import io.artifactz.client.exception.ClientException;
 import io.iktech.jenkins.plugins.artifactz.client.ServiceClientFactory;
 import io.iktech.jenkins.plugins.artifactz.modules.ServiceClientFactoryModule;
 import jenkins.tasks.SimpleBuildStep;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
